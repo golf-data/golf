@@ -62,6 +62,7 @@ test("registry manifests claim golf without displayName", async () => {
   assert.equal(server.websiteUrl, "https://golfintelligence.com/");
   assert.equal(server.repository.url, "https://github.com/golf-data/golf");
   assert.equal(server.packages[0].registryType, "mcpb");
+  assert.equal("registryBaseUrl" in server.packages[0], false);
   assert.equal(
     server.packages[0].identifier,
     "https://github.com/golf-data/golf/releases/download/v1.0.0/golf.mcpb",
