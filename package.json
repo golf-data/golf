@@ -10,7 +10,8 @@
     "build": "node scripts/build.mjs",
     "start:http": "node dist/http.js",
     "pack:mcpb": "node scripts/pack-mcpb.mjs",
-    "test": "node --test --import tsx tests/*.test.ts"
+    "test": "node --test --import tsx tests/*.test.ts",
+    "typecheck": "tsc --noEmit"
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "latest",
@@ -18,6 +19,7 @@
     "zod": "latest"
   },
   "devDependencies": {
+    "@types/express": "^5.0.6",
     "@types/node": "^26.4.0",
     "esbuild": "latest",
     "tsx": "latest",
