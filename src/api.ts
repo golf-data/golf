@@ -3,7 +3,7 @@ export const AUTH_URL = `${API_BASE_URL}/auth/authenticateToken`;
 
 export type Fetch = typeof globalThis.fetch;
 
-type Credentials = {
+export type Credentials = {
   clientId: string;
   activeToken: string;
 };

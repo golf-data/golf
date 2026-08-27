@@ -1,8 +1,11 @@
 import { build } from "esbuild";
 
 await build({
-  entryPoints: ["src/index.ts"],
-  outfile: "dist/index.js",
+  entryPoints: {
+    index: "src/index.ts",
+    http: "src/http.ts",
+  },
+  outdir: "dist",
   bundle: true,
   platform: "node",
   target: "node18",

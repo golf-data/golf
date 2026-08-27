@@ -10,6 +10,13 @@ const api = new GolfIntelligenceClient({
   activeToken: process.env.GI_ACTIVE_TOKEN?.trim() ?? "",
 });
 
+const READ_ONLY_LOOKUP_ANNOTATIONS = {
+  readOnlyHint: true,
+  openWorldHint: false,
+  destructiveHint: false,
+  idempotentHint: true,
+} as const;
+
 function toolResult(value: unknown) {
   return {
     content: [
@@ -51,7 +58,7 @@ export function createServer(client: GolfIntelligenceClient = api): McpServer {
           .optional()
           .describe("Result offset for pagination"),
       },
-      annotations: { readOnlyHint: true },
+      annotations: READ_ONLY_LOOKUP_ANNOTATIONS,
     },
     async ({ keywords, rows, offset }) =>
       toolResult(
@@ -77,7 +84,7 @@ export function createServer(client: GolfIntelligenceClient = api): McpServer {
           .boolean()
           .describe("Must be true to authorize spending 1 credit"),
       },
-      annotations: { readOnlyHint: true },
+      annotations: READ_ONLY_LOOKUP_ANNOTATIONS,
     },
     async ({ PublicId, confirm_spend }) => {
       requireSpendConfirmation(
@@ -105,7 +112,7 @@ export function createServer(client: GolfIntelligenceClient = api): McpServer {
           .boolean()
           .describe("Must be true to authorize spending 2 credits"),
       },
-      annotations: { readOnlyHint: true },
+      annotations: READ_ONLY_LOOKUP_ANNOTATIONS,
     },
     async ({ PublicId, confirm_spend }) => {
       requireSpendConfirmation(confirm_spend, 2, "get_course_group_gps");
@@ -129,7 +136,7 @@ export function createServer(client: GolfIntelligenceClient = api): McpServer {
           .boolean()
           .describe("Must be true to authorize spending 3 credits"),
       },
-      annotations: { readOnlyHint: true },
+      annotations: READ_ONLY_LOOKUP_ANNOTATIONS,
     },
     async ({ PublicId, confirm_spend }) => {
       requireSpendConfirmation(confirm_spend, 3, "get_course_group_detail");
@@ -156,7 +163,7 @@ export function createServer(client: GolfIntelligenceClient = api): McpServer {
           .boolean()
           .describe("Must be true to authorize spending 1 credit"),
       },
-      annotations: { readOnlyHint: true },
+      annotations: READ_ONLY_LOOKUP_ANNOTATIONS,
     },
     async ({ holeId, imageSizeType, confirm_spend }) => {
       requireSpendConfirmation(confirm_spend, 1, "get_green_slope_image");

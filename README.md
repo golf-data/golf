@@ -75,6 +75,70 @@ It sends the returned `access_token` as `Authorization: Bearer <access_token>`,
 caches it only in memory, and refreshes once after an HTTP 401. Credentials are
 never logged.
 
+## Streamable HTTP
+
+The production HTTP entrypoint serves the official MCP Streamable HTTP
+transport at `/mcp` and a health check at `/health`. The intended custom-domain
+URL shape is:
+
+```text
+https://mcp.golfintelligence.com/mcp
+```
+
+This repository does not claim that URL is live; DNS and deployment must be
+completed before it is submitted for review. Start the HTTP server locally
+with:
+
+```bash
+npm run build
+PORT=3000 npm run start:http
+```
+
+It binds to `0.0.0.0:$PORT`. The existing `node dist/index.js` stdio entrypoint
+and all plugin packages remain unchanged.
+
+The HTTP service resolves Golf Intelligence credentials in this order:
+
+1. `X-GI-Client-ID` and `X-GI-Active-Token` HTTP headers supplied together on
+   every MCP request.
+2. Server-side `GI_CLIENT_ID` and `GI_ACTIVE_TOKEN` environment variables.
+
+Codex supports static `http_headers` and environment-backed `env_http_headers`
+for Streamable HTTP MCP servers. For OpenAI review, either configure a
+dedicated review API account as deployment environment variables or provide
+the two custom headers if the review configuration supports them. The Active
+Token remains an exchange credential and must not be sent as an
+`Authorization: Bearer` value. A production deployment should use a dedicated
+account with an appropriate credit limit because environment-based credentials
+make the lookup tools available to every caller of the public endpoint.
+
+Every tool explicitly advertises these MCP annotations:
+
+- `readOnlyHint: true` — each tool only retrieves course data.
+- `openWorldHint: false` — no tool writes to public or external systems.
+- `destructiveHint: false` — no tool deletes, overwrites, publishes, or sends
+  anything.
+- `idempotentHint: true` — repeating a lookup has no additional side effect.
+
+These sentences can also be used as the annotation justifications in the
+OpenAI submission form. Paid lookups still require `confirm_spend=true` at the
+same credit costs documented above.
+
+### Container deployment
+
+`Dockerfile` builds both transports without embedding credentials.
+`fly.toml` configures a small Fly.io service and checks `/health`. Before the
+first deploy, confirm that the globally unique Fly app name is available (or
+change `app`), then set runtime secrets and deploy:
+
+```bash
+fly secrets set GI_CLIENT_ID=... GI_ACTIVE_TOKEN=...
+fly deploy
+```
+
+Set the custom domain only after the deployed `*.fly.dev` endpoint passes an
+MCP Inspector check. No deployment is performed by this repository.
+
 ## Repository layout
 
 - `.cursor-plugin/plugin.json` — Cursor marketplace manifest and required variables
@@ -86,7 +150,9 @@ never logged.
 - `mcp.json` — bundled `golf` MCP server configuration
 - `skills/golf/SKILL.md` — workflow and spend-confirmation guidance
 - `src/` — TypeScript MCP server and API client
-- `dist/index.js` — committed ESM bundle used by installers
+- `dist/index.js` — committed stdio ESM bundle used by installers
+- `dist/http.js` — committed Streamable HTTP ESM bundle used by the container
+- `Dockerfile` and `fly.toml` — production HTTP container and Fly.io service
 
 For development with Node.js 18 or newer:
 

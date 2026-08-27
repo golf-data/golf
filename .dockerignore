@@ -1,0 +1,10 @@
+.git
+.github
+.env
+.env.*
+node_modules
+dist
+dist-test
+golf.mcpb
+mcp-publisher
+npm-debug.log*
