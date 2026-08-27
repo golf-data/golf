@@ -7,6 +7,8 @@ import { AUTH_URL, GolfIntelligenceClient } from "../src/api.js";
 import {
   ACTIVE_TOKEN_HEADER,
   CLIENT_ID_HEADER,
+  DEFAULT_OPENAI_APPS_CHALLENGE,
+  OPENAI_APPS_CHALLENGE_PATH,
   createHttpApp,
   credentialsFromHeaders,
 } from "../src/http.js";
@@ -24,6 +26,26 @@ test("credential headers must be complete and take request credentials", () => {
     () => credentialsFromHeaders({ [CLIENT_ID_HEADER]: "request-client" }),
     /must be provided together/,
   );
+});
+
+test("GET /.well-known/openai-apps-challenge returns 200 and the token", async () => {
+  const app = createHttpApp({ env: {} });
+  const httpServer = await new Promise<ReturnType<typeof app.listen>>((resolve) => {
+    const listening = app.listen(0, "127.0.0.1", () => resolve(listening));
+  });
+  const { port } = httpServer.address() as AddressInfo;
+  try {
+    const response = await fetch(
+      `http://127.0.0.1:${port}${OPENAI_APPS_CHALLENGE_PATH}`,
+    );
+    assert.equal(response.status, 200);
+    assert.match(response.headers.get("content-type") ?? "", /^text\/plain\b/);
+    assert.equal(await response.text(), DEFAULT_OPENAI_APPS_CHALLENGE);
+  } finally {
+    await new Promise<void>((resolve, reject) => {
+      httpServer.close((error?: Error) => (error ? reject(error) : resolve()));
+    });
+  }
 });
 
 test("Streamable HTTP exposes health, tools, annotations, and header auth", async () => {
