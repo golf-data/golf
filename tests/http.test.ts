@@ -89,7 +89,9 @@ test("Streamable HTTP exposes health, tools, annotations, and header auth", asyn
       arguments: { keywords: "St Andrews" },
     });
     assert.equal(result.isError, undefined);
-    const content = result.content[0] as { type: string; text: string };
+    const content = (
+      result as { content: Array<{ type: string; text: string }> }
+    ).content[0];
     assert.equal(content.type, "text");
     assert.deepEqual(JSON.parse(content.text), { courses: [] });
     assert.ok(
@@ -101,7 +103,7 @@ test("Streamable HTTP exposes health, tools, annotations, and header auth", asyn
   } finally {
     await client.close();
     await new Promise<void>((resolve, reject) => {
-      httpServer.close((error) => (error ? reject(error) : resolve()));
+      httpServer.close((error?: Error) => (error ? reject(error) : resolve()));
     });
   }
 });

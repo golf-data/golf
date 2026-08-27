@@ -2,6 +2,7 @@ import type { IncomingHttpHeaders, Server as HttpServer } from "node:http";
 import { pathToFileURL } from "node:url";
 import { createMcpExpressApp } from "@modelcontextprotocol/sdk/server/express.js";
 import { StreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/streamableHttp.js";
+import type { Request, Response } from "express";
 import { GolfIntelligenceClient, type Credentials } from "./api.js";
 import { createServer } from "./index.js";
 
@@ -56,11 +57,11 @@ export function createHttpApp(options: HttpAppOptions = {}) {
   });
   const app = createMcpExpressApp({ host: "0.0.0.0" });
 
-  app.get("/health", (_req, res) => {
+  app.get("/health", (_req: Request, res: Response) => {
     res.status(200).json({ status: "ok" });
   });
 
-  app.post("/mcp", async (req, res) => {
+  app.post("/mcp", async (req: Request, res: Response) => {
     let server: ReturnType<typeof createServer> | undefined;
     let transport: StreamableHTTPServerTransport | undefined;
     let cleanedUp = false;
