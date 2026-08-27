@@ -89,7 +89,9 @@ test("Streamable HTTP exposes health, tools, annotations, and header auth", asyn
       arguments: { keywords: "St Andrews" },
     });
     assert.equal(result.isError, undefined);
-    assert.match(JSON.stringify(result.content), /"courses": \[\]/);
+    const content = result.content[0] as { type: string; text: string };
+    assert.equal(content.type, "text");
+    assert.deepEqual(JSON.parse(content.text), { courses: [] });
     assert.ok(
       credentialsSeen.some(
         ({ clientId, activeToken }) =>
