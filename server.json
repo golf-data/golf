@@ -2,7 +2,7 @@
   "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
   "name": "io.github.golf-data/golf",
   "title": "Golf Intelligence, by Stracka",
-  "description": "Golf Intelligence, by Stracka. Highest-quality golf course dataset for developers. Search is free.",
+  "description": "Proprietary mapped golf courses (laser, drone, satellite). 20 years, daily updates. Search is free.",
   "version": "1.0.0",
   "websiteUrl": "https://golfintelligence.com/",
   "repository": {
@@ -13,7 +13,9 @@
     {
       "src": "https://raw.githubusercontent.com/golf-data/golf/main/assets/logo.svg",
       "mimeType": "image/svg+xml",
-      "sizes": ["any"]
+      "sizes": [
+        "any"
+      ]
     }
   ],
   "packages": [
@@ -39,7 +41,8 @@
           "format": "string",
           "isSecret": true
         }
-      ]
+      ],
+      "fileSha256": "b455564ade9694aeb3788857a273c7bfba4b66aeb673bb79cb04bcafe6f26030"
     }
   ]
 }

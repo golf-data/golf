@@ -81,6 +81,8 @@ never logged.
 - `plugin.json` — Agent Plugins open-standard manifest (handle `golf`)
 - `.claude-plugin/plugin.json` — Claude Code / Cowork plugin manifest (handle `golf`)
 - `server.json` — official MCP Registry metadata (`io.github.golf-data/golf`)
+- `manifest.json` — MCPB bundle manifest for the stdio Node server
+- `.github/workflows/publish-mcp.yml` — publishes `io.github.golf-data/golf` to the official MCP Registry via GitHub OIDC
 - `mcp.json` — bundled `golf` MCP server configuration
 - `skills/golf/SKILL.md` — workflow and spend-confirmation guidance
 - `src/` — TypeScript MCP server and API client
@@ -92,7 +94,10 @@ For development with Node.js 18 or newer:
 npm install
 npm test
 npm run build
+npm run pack:mcpb
 ```
+
+`pack:mcpb` uses the official `@anthropic-ai/mcpb pack` CLI to produce `golf.mcpb` and writes its SHA-256 into `server.json`. GitHub Releases host that asset at `https://github.com/golf-data/golf/releases/download/v1.0.0/golf.mcpb`.
 
 The plugin code is available under the MIT License. Golf Intelligence API data
 remains subject to the terms at
