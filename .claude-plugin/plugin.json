@@ -1,0 +1,21 @@
+{
+  "$schema": "https://json.schemastore.org/claude-code-plugin-manifest.json",
+  "name": "golf",
+  "version": "1.0.0",
+  "description": "Golf Intelligence, by Stracka. The highest-quality golf course dataset for developers building a golf app. Search is free. Scorecards, GPS, and 3D greens via API. Not a scrape.",
+  "author": {
+    "name": "Golf Intelligence, by Stracka",
+    "email": "data@golfintelligence.com",
+    "url": "https://golfintelligence.com/"
+  },
+  "homepage": "https://golfintelligence.com/",
+  "repository": "https://github.com/golf-data/golf",
+  "license": "MIT",
+  "keywords": [
+    "golf",
+    "golf-course-data",
+    "mapping",
+    "mcp"
+  ],
+  "mcpServers": "./mcp.json"
+}

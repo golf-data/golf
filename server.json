@@ -1,0 +1,45 @@
+{
+  "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
+  "name": "io.github.golf-data/golf",
+  "title": "Golf Intelligence, by Stracka",
+  "description": "Golf Intelligence, by Stracka. Highest-quality golf course dataset for developers. Search is free.",
+  "version": "1.0.0",
+  "websiteUrl": "https://golfintelligence.com/",
+  "repository": {
+    "url": "https://github.com/golf-data/golf",
+    "source": "github"
+  },
+  "icons": [
+    {
+      "src": "https://raw.githubusercontent.com/golf-data/golf/main/assets/logo.svg",
+      "mimeType": "image/svg+xml",
+      "sizes": ["any"]
+    }
+  ],
+  "packages": [
+    {
+      "registryType": "mcpb",
+      "registryBaseUrl": "https://github.com",
+      "identifier": "https://github.com/golf-data/golf/releases/download/v1.0.0/golf.mcpb",
+      "transport": {
+        "type": "stdio"
+      },
+      "environmentVariables": [
+        {
+          "name": "GI_CLIENT_ID",
+          "description": "Client ID from API Account at https://console.golfintelligence.com/.",
+          "isRequired": true,
+          "format": "string",
+          "isSecret": false
+        },
+        {
+          "name": "GI_ACTIVE_TOKEN",
+          "description": "Active Token from API Account at https://console.golfintelligence.com/. It is exchanged for a bearer token; do not enter a bearer token.",
+          "isRequired": true,
+          "format": "string",
+          "isSecret": true
+        }
+      ]
+    }
+  ]
+}

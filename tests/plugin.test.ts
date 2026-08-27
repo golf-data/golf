@@ -24,7 +24,12 @@ test("marketplace manifest uses the golf handle and required variables", async (
 
 test("MCP config launches the committed bundle with plugin variables", async () => {
   const config = JSON.parse(await readFile("mcp.json", "utf8"));
+  assert.equal(
+    config.$schema,
+    "https://agent-plugins.org/schemas/1.0.0/mcp.schema.json",
+  );
   assert.deepEqual(config.mcpServers.golf, {
+    type: "stdio",
     command: "node",
     args: ["${PLUGIN_ROOT}/dist/index.js"],
     env: {
@@ -32,6 +37,34 @@ test("MCP config launches the committed bundle with plugin variables", async () 
       GI_ACTIVE_TOKEN: "${GI_ACTIVE_TOKEN}",
     },
   });
+});
+
+test("registry manifests claim golf without displayName", async () => {
+  const agent = JSON.parse(await readFile("plugin.json", "utf8"));
+  assert.equal(
+    agent.$schema,
+    "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
+  );
+  assert.equal(agent.name, "golf");
+  assert.equal(agent.author.name, "Golf Intelligence, by Stracka");
+  assert.equal("displayName" in agent, false);
+
+  const claude = JSON.parse(await readFile(".claude-plugin/plugin.json", "utf8"));
+  assert.equal(claude.name, "golf");
+  assert.equal(claude.author.name, "Golf Intelligence, by Stracka");
+  assert.equal(claude.mcpServers, "./mcp.json");
+  assert.equal("displayName" in claude, false);
+
+  const server = JSON.parse(await readFile("server.json", "utf8"));
+  assert.equal(server.name, "io.github.golf-data/golf");
+  assert.equal(server.title, "Golf Intelligence, by Stracka");
+  assert.ok(server.description.length <= 100);
+  assert.equal(server.websiteUrl, "https://golfintelligence.com/");
+  assert.equal(server.repository.url, "https://github.com/golf-data/golf");
+  assert.deepEqual(
+    server.packages[0].environmentVariables.map((item: { name: string }) => item.name),
+    ["GI_CLIENT_ID", "GI_ACTIVE_TOKEN"],
+  );
 });
 
 test("committed bundle starts and exposes all Golf Intelligence tools", async () => {

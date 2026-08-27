@@ -19,6 +19,10 @@ Marketplace reviewers can submit that URL at
 [cursor.com/marketplace/publish](https://cursor.com/marketplace/publish). The
 catalog title is **Golf Intelligence, by Stracka**.
 
+The official MCP Registry name is **`io.github.golf-data/golf`**. The registry
+does not accept a bare `golf` name. Cursor, Agent Plugins, and Claude Code
+plugin handles remain `golf`.
+
 ## Get API access
 
 Create an API Account at
@@ -73,7 +77,10 @@ never logged.
 
 ## Repository layout
 
-- `.cursor-plugin/plugin.json` — marketplace manifest and required variables
+- `.cursor-plugin/plugin.json` — Cursor marketplace manifest and required variables
+- `plugin.json` — Agent Plugins open-standard manifest (handle `golf`)
+- `.claude-plugin/plugin.json` — Claude Code / Cowork plugin manifest (handle `golf`)
+- `server.json` — official MCP Registry metadata (`io.github.golf-data/golf`)
 - `mcp.json` — bundled `golf` MCP server configuration
 - `skills/golf/SKILL.md` — workflow and spend-confirmation guidance
 - `src/` — TypeScript MCP server and API client
