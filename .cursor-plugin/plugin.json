@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "description": "Golf Intelligence, by Stracka. The highest-quality golf course dataset for developers building a golf app. 20 years of proprietary mapping (laser, drone, airplane, satellite), updated daily. Search is free. Scorecards, GPS, and 3D greens via API. Not a scrape.",
   "author": {
-    "name": "Stracka",
+    "name": "Golf Intelligence, by Stracka",
     "email": "data@golfintelligence.com"
   },
   "homepage": "https://golfintelligence.com/",

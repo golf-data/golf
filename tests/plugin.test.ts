@@ -10,6 +10,10 @@ test("marketplace manifest uses the golf handle and required variables", async (
   ) as Record<string, unknown>;
   assert.equal(manifest.name, "golf");
   assert.equal("displayName" in manifest, false);
+  assert.equal(
+    (manifest.author as { name: string }).name,
+    "Golf Intelligence, by Stracka",
+  );
   assert.equal(manifest.logo, "assets/logo.svg");
 
   const variables = manifest.variables as {
