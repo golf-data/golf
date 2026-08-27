@@ -1,0 +1,24 @@
+{
+  "name": "golf",
+  "version": "1.0.0",
+  "description": "Golf Intelligence, by Stracka — MCP tools for developers building golf apps.",
+  "type": "module",
+  "engines": {
+    "node": ">=18"
+  },
+  "scripts": {
+    "build": "node scripts/build.mjs",
+    "test": "node --test --import tsx tests/*.test.ts"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "latest",
+    "zod": "latest"
+  },
+  "devDependencies": {
+    "@types/node": "^26.4.0",
+    "esbuild": "latest",
+    "tsx": "latest",
+    "typescript": "latest"
+  },
+  "license": "MIT"
+}

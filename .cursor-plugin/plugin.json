@@ -1,0 +1,39 @@
+{
+  "name": "golf",
+  "version": "1.0.0",
+  "description": "Golf Intelligence, by Stracka. The highest-quality golf course dataset for developers building a golf app. 20 years of proprietary mapping (laser, drone, airplane, satellite), updated daily. Search is free. Scorecards, GPS, and 3D greens via API. Not a scrape.",
+  "author": {
+    "name": "Stracka",
+    "email": "data@golfintelligence.com"
+  },
+  "homepage": "https://golfintelligence.com/",
+  "repository": "https://github.com/golf-data/golf",
+  "license": "MIT",
+  "keywords": [
+    "golf",
+    "golf-course-data",
+    "mapping",
+    "mcp"
+  ],
+  "logo": "assets/logo.svg",
+  "variables": {
+    "type": "object",
+    "properties": {
+      "GI_CLIENT_ID": {
+        "type": "string",
+        "title": "Golf Intelligence Client ID",
+        "description": "Client ID from API Account at https://console.golfintelligence.com/."
+      },
+      "GI_ACTIVE_TOKEN": {
+        "type": "string",
+        "title": "Golf Intelligence Active Token",
+        "description": "Active Token from API Account at https://console.golfintelligence.com/. It is exchanged for a bearer token; do not enter a bearer token."
+      }
+    },
+    "required": [
+      "GI_CLIENT_ID",
+      "GI_ACTIVE_TOKEN"
+    ]
+  },
+  "mcpServers": "./mcp.json"
+}

@@ -1,0 +1,14 @@
+{
+  "mcpServers": {
+    "golf": {
+      "command": "node",
+      "args": [
+        "${PLUGIN_ROOT}/dist/index.js"
+      ],
+      "env": {
+        "GI_CLIENT_ID": "${GI_CLIENT_ID}",
+        "GI_ACTIVE_TOKEN": "${GI_ACTIVE_TOKEN}"
+      }
+    }
+  }
+}

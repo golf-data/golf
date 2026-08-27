@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-labelledby="title">
+  <title id="title">Golf Intelligence</title>
+  <rect width="512" height="512" rx="96" fill="#102f24"/>
+  <path d="M142 106h228v64H206v172h100v-54h-67v-64h131v182H142z" fill="#fff"/>
+  <circle cx="370" cy="106" r="30" fill="#81c784"/>
+</svg>
