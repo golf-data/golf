@@ -8,6 +8,9 @@ import { createServer } from "./index.js";
 
 export const CLIENT_ID_HEADER = "x-gi-client-id";
 export const ACTIVE_TOKEN_HEADER = "x-gi-active-token";
+export const OPENAI_APPS_CHALLENGE_PATH = "/.well-known/openai-apps-challenge";
+export const DEFAULT_OPENAI_APPS_CHALLENGE =
+  "Bpx9YLscvKWkLtCgGhBfgWLF7Kk3xGAyr6Rnva2PyIk";
 
 type HttpAppOptions = {
   env?: NodeJS.ProcessEnv;
@@ -59,6 +62,12 @@ export function createHttpApp(options: HttpAppOptions = {}) {
 
   app.get("/health", (_req: Request, res: Response) => {
     res.status(200).json({ status: "ok" });
+  });
+
+  app.get(OPENAI_APPS_CHALLENGE_PATH, (_req: Request, res: Response) => {
+    const challenge =
+      env.OPENAI_APPS_CHALLENGE?.trim() || DEFAULT_OPENAI_APPS_CHALLENGE;
+    res.status(200).type("text/plain").send(challenge);
   });
 
   app.post("/mcp", async (req: Request, res: Response) => {
