@@ -61,10 +61,28 @@ test("registry manifests claim golf without displayName", async () => {
   assert.ok(server.description.length <= 100);
   assert.equal(server.websiteUrl, "https://golfintelligence.com/");
   assert.equal(server.repository.url, "https://github.com/golf-data/golf");
+  assert.equal(server.packages[0].registryType, "mcpb");
+  assert.equal(
+    server.packages[0].identifier,
+    "https://github.com/golf-data/golf/releases/download/v1.0.0/golf.mcpb",
+  );
+  assert.match(server.packages[0].fileSha256, /^[a-f0-9]{64}$/);
   assert.deepEqual(
     server.packages[0].environmentVariables.map((item: { name: string }) => item.name),
     ["GI_CLIENT_ID", "GI_ACTIVE_TOKEN"],
   );
+});
+
+test("MCPB manifest keeps the golf handle and stdio Node entry", async () => {
+  const manifest = JSON.parse(await readFile("manifest.json", "utf8"));
+  assert.equal(manifest.name, "golf");
+  assert.equal(manifest.author.name, "Golf Intelligence, by Stracka");
+  assert.equal(manifest.server.type, "node");
+  assert.equal(manifest.server.entry_point, "dist/index.js");
+  assert.equal(manifest.server.mcp_config.command, "node");
+  assert.deepEqual(manifest.server.mcp_config.args, [
+    "${__dirname}/dist/index.js",
+  ]);
 });
 
 test("committed bundle starts and exposes all Golf Intelligence tools", async () => {

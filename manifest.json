@@ -1,0 +1,78 @@
+{
+  "manifest_version": "0.3",
+  "name": "golf",
+  "display_name": "Golf Intelligence, by Stracka",
+  "version": "1.0.0",
+  "description": "Highest-quality proprietary mapped golf course dataset. Search is free.",
+  "long_description": "Golf Intelligence, by Stracka. The highest-quality golf course dataset for developers building a golf app. 20 years of proprietary mapping (laser, drone, airplane, satellite), updated daily. Search is free. Scorecards, GPS, and 3D greens via API. Not a scrape.",
+  "author": {
+    "name": "Golf Intelligence, by Stracka",
+    "email": "data@golfintelligence.com",
+    "url": "https://golfintelligence.com/"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/golf-data/golf.git"
+  },
+  "homepage": "https://golfintelligence.com/",
+  "documentation": "https://github.com/golf-data/golf#readme",
+  "support": "mailto:data@golfintelligence.com",
+  "license": "MIT",
+  "keywords": ["golf", "golf-course", "mcp", "mcp-server", "mapping"],
+  "server": {
+    "type": "node",
+    "entry_point": "dist/index.js",
+    "mcp_config": {
+      "command": "node",
+      "args": ["${__dirname}/dist/index.js"],
+      "env": {
+        "GI_CLIENT_ID": "${user_config.GI_CLIENT_ID}",
+        "GI_ACTIVE_TOKEN": "${user_config.GI_ACTIVE_TOKEN}"
+      }
+    }
+  },
+  "user_config": {
+    "GI_CLIENT_ID": {
+      "type": "string",
+      "title": "Golf Intelligence Client ID",
+      "description": "Client ID from API Account at https://console.golfintelligence.com/.",
+      "required": true,
+      "sensitive": false
+    },
+    "GI_ACTIVE_TOKEN": {
+      "type": "string",
+      "title": "Golf Intelligence Active Token",
+      "description": "Active Token from API Account at https://console.golfintelligence.com/. It is exchanged for a bearer token; do not enter a bearer token.",
+      "required": true,
+      "sensitive": true
+    }
+  },
+  "tools": [
+    {
+      "name": "search_course_groups",
+      "description": "Free course-group search. Always search first."
+    },
+    {
+      "name": "get_course_group_scorecard",
+      "description": "Paid scorecard data for a course group."
+    },
+    {
+      "name": "get_course_group_gps",
+      "description": "Paid mapped course geometry and coordinates."
+    },
+    {
+      "name": "get_course_group_detail",
+      "description": "Paid detailed course-group data."
+    },
+    {
+      "name": "get_green_slope_image",
+      "description": "Paid portrait or square green slope image."
+    }
+  ],
+  "compatibility": {
+    "platforms": ["darwin", "win32", "linux"],
+    "runtimes": {
+      "node": ">=18.0.0"
+    }
+  }
+}

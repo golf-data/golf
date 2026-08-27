@@ -8,6 +8,7 @@
   },
   "scripts": {
     "build": "node scripts/build.mjs",
+    "pack:mcpb": "node scripts/pack-mcpb.mjs",
     "test": "node --test --import tsx tests/*.test.ts"
   },
   "dependencies": {
