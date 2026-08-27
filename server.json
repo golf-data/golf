@@ -21,7 +21,6 @@
   "packages": [
     {
       "registryType": "mcpb",
-      "registryBaseUrl": "https://github.com",
       "identifier": "https://github.com/golf-data/golf/releases/download/v1.0.0/golf.mcpb",
       "transport": {
         "type": "stdio"
