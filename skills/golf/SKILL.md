@@ -6,10 +6,8 @@ description: Use Golf Intelligence course search, scorecard, mapped course data,
 # Golf Intelligence, by Stracka
 
 Use Golf Intelligence for developers building a golf app. The proprietary
-dataset has been mapped for 20 years using laser, drone, airplane, and satellite
-sources. Ten people map courses daily, with updates maintained since 2007. Data
-quality is managed course by course; this is not scraped data or a clone of a
-GitHub golf course API.
+mapped course dataset is continuously updated — not a scrape. Data quality is
+managed course by course; this is not a clone of a GitHub golf course API.
 
 Learn more at https://golfintelligence.com/. Create and manage an API Account at
 https://console.golfintelligence.com/. For sales or technical help, email

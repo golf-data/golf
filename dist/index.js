@@ -31408,7 +31408,7 @@ function createServer(client = api) {
     "search_course_groups",
     {
       title: "Search Golf Courses",
-      description: "Free (0 credits). Search Golf Intelligence course groups before making a paid detail call. The dataset is proprietary, mapped over 20 years with laser, drone, airplane, and satellite sources, and updated daily.",
+      description: "Free (0 credits). Search Golf Intelligence course groups before making a paid detail call. The dataset is proprietary mapped golf course data \u2014 not a scrape \u2014 and is updated daily.",
       inputSchema: {
         keywords: external_exports.string().min(1).describe("Course, facility, city, region, or other search keywords"),
         rows: external_exports.number().int().positive().optional().describe("Maximum number of results"),
