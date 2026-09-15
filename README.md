@@ -1,14 +1,13 @@
 # Golf Intelligence, by Stracka
 
-> Golf Intelligence, by Stracka. The highest-quality golf course dataset for
-> developers building a golf app. 20 years of proprietary mapping (laser,
-> drone, airplane, satellite), updated daily. Search is free. Scorecards, GPS,
-> and 3D greens via API. Not a scrape.
+> Golf Intelligence, by Stracka. The highest-quality proprietary golf course
+> dataset for developers building a golf app. Continuously updated mapped
+> course data — not a scrape. Search is free. Scorecards, GPS, and 3D greens
+> via API.
 
-Golf Intelligence is a proprietary dataset built through course-by-course
-mapping, not a clone of a GitHub golf course API. Ten people map every day, and
-the data has been continuously updated since 2007. Learn more at
-[golfintelligence.com](https://golfintelligence.com/).
+Golf Intelligence is a proprietary curated dataset of mapped golf courses,
+continuously updated — not a scrape or a clone of a GitHub golf course API.
+Learn more at [golfintelligence.com](https://golfintelligence.com/).
 
 This repository is the installable Cursor / Grok Bot plugin with handle
 `golf`. The Cursor marketplace application source is the public GitHub URL:

@@ -39,7 +39,7 @@ export function createServer(client: GolfIntelligenceClient = api): McpServer {
     {
       title: "Search Golf Courses",
       description:
-        "Free (0 credits). Search Golf Intelligence course groups before making a paid detail call. The dataset is proprietary, mapped over 20 years with laser, drone, airplane, and satellite sources, and updated daily.",
+        "Free (0 credits). Search Golf Intelligence course groups before making a paid detail call. The dataset is proprietary mapped golf course data — not a scrape — and is updated daily.",
       inputSchema: {
         keywords: z
           .string()
