@@ -16,7 +16,7 @@ const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const outputName = "golf.mcpb";
 const outputPath = path.join(root, outputName);
 const identifier =
-  "https://github.com/golf-data/golf/releases/download/v1.0.0/golf.mcpb";
+  "https://github.com/golf-data/golf/releases/download/v1.0.1/golf.mcpb";
 
 const staging = await mkdtemp(path.join(tmpdir(), "golf-mcpb-"));
 

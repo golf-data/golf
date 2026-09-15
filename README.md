@@ -18,6 +18,12 @@ Marketplace reviewers can submit that URL at
 [cursor.com/marketplace/publish](https://cursor.com/marketplace/publish). The
 catalog title is **Golf Intelligence, by Stracka**.
 
+The bundled `mcp.json` launches `node` with
+`${CURSOR_PLUGIN_ROOT}/dist/index.js`. Cursor does not expand Agent Plugins
+`${PLUGIN_ROOT}`, so that placeholder would be passed through literally and the
+connector would fail to load. Claude Code expands `${CLAUDE_PLUGIN_ROOT}` if a
+host-specific MCP config is added later.
+
 The official MCP Registry name is **`io.github.golf-data/golf`**. The registry
 does not accept a bare `golf` name. Cursor, Agent Plugins, and Claude Code
 plugin handles remain `golf`.
@@ -162,7 +168,7 @@ npm run build
 npm run pack:mcpb
 ```
 
-`pack:mcpb` uses the official `@anthropic-ai/mcpb pack` CLI to produce `golf.mcpb` and writes its SHA-256 into `server.json`. GitHub Releases host that asset at `https://github.com/golf-data/golf/releases/download/v1.0.0/golf.mcpb`.
+`pack:mcpb` uses the official `@anthropic-ai/mcpb pack` CLI to produce `golf.mcpb` and writes its SHA-256 into `server.json`. GitHub Releases host that asset at `https://github.com/golf-data/golf/releases/download/v1.0.1/golf.mcpb`.
 
 The plugin code is available under the MIT License. Golf Intelligence API data
 remains subject to the terms at
