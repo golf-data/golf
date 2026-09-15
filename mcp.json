@@ -5,7 +5,7 @@
       "type": "stdio",
       "command": "node",
       "args": [
-        "${PLUGIN_ROOT}/dist/index.js"
+        "${CURSOR_PLUGIN_ROOT}/dist/index.js"
       ],
       "env": {
         "GI_CLIENT_ID": "${GI_CLIENT_ID}",

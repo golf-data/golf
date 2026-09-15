@@ -2,7 +2,7 @@
   "manifest_version": "0.3",
   "name": "golf",
   "display_name": "Golf Intelligence, by Stracka",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Highest-quality proprietary mapped golf course dataset. Search is free.",
   "long_description": "Golf Intelligence, by Stracka. The highest-quality proprietary golf course dataset for developers building a golf app. Continuously updated mapped course data — not a scrape. Search is free. Scorecards, GPS, and 3D greens via API.",
   "author": {

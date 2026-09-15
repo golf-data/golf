@@ -57519,7 +57519,7 @@ function toolResult(value) {
 function createServer(client = api) {
   const server = new McpServer({
     name: "golf",
-    version: "1.0.0"
+    version: "1.0.1"
   });
   server.registerTool(
     "search_course_groups",

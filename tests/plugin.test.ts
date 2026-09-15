@@ -31,7 +31,7 @@ test("MCP config launches the committed bundle with plugin variables", async () 
   assert.deepEqual(config.mcpServers.golf, {
     type: "stdio",
     command: "node",
-    args: ["${PLUGIN_ROOT}/dist/index.js"],
+    args: ["${CURSOR_PLUGIN_ROOT}/dist/index.js"],
     env: {
       GI_CLIENT_ID: "${GI_CLIENT_ID}",
       GI_ACTIVE_TOKEN: "${GI_ACTIVE_TOKEN}",
@@ -65,7 +65,7 @@ test("registry manifests claim golf without displayName", async () => {
   assert.equal("registryBaseUrl" in server.packages[0], false);
   assert.equal(
     server.packages[0].identifier,
-    "https://github.com/golf-data/golf/releases/download/v1.0.0/golf.mcpb",
+    "https://github.com/golf-data/golf/releases/download/v1.0.1/golf.mcpb",
   );
   assert.match(server.packages[0].fileSha256, /^[a-f0-9]{64}$/);
   assert.deepEqual(

@@ -1,6 +1,6 @@
 {
   "name": "golf",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Golf Intelligence, by Stracka — MCP tools for developers building golf apps.",
   "type": "module",
   "engines": {

@@ -31,7 +31,7 @@ function toolResult(value: unknown) {
 export function createServer(client: GolfIntelligenceClient = api): McpServer {
   const server = new McpServer({
     name: "golf",
-    version: "1.0.0",
+    version: "1.0.1",
   });
 
   server.registerTool(
