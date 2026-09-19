@@ -64,7 +64,7 @@ export class GolfIntelligenceClient {
     const { clientId, activeToken } = this.credentials;
     if (!clientId || !activeToken) {
       throw new Error(
-        "Configure GI_CLIENT_ID and GI_ACTIVE_TOKEN from your Golf Intelligence API Account.",
+        "Configure GI_CLIENT_ID and GI_ACTIVE_TOKEN from your API Account at console.golfintelligence.com.",
       );
     }
 

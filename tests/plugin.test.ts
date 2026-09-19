@@ -22,12 +22,24 @@ test("marketplace manifest uses the golf handle and required variables", async (
   assert.deepEqual(variables.required, ["GI_CLIENT_ID", "GI_ACTIVE_TOKEN"]);
 });
 
-test("MCP config launches the committed bundle with plugin variables", async () => {
+test("MCP config connects to the hosted endpoint with plugin variables", async () => {
   const config = JSON.parse(await readFile("mcp.json", "utf8"));
   assert.equal(
     config.$schema,
     "https://agent-plugins.org/schemas/1.0.0/mcp.schema.json",
   );
+  assert.deepEqual(config.mcpServers.golf, {
+    type: "http",
+    url: "https://mcp.golfintelligence.com/mcp",
+    headers: {
+      "X-GI-Client-ID": "${GI_CLIENT_ID}",
+      "X-GI-Active-Token": "${GI_ACTIVE_TOKEN}",
+    },
+  });
+});
+
+test("optional stdio config resolves the plugin root Cursor expands", async () => {
+  const config = JSON.parse(await readFile("mcp.stdio.json", "utf8"));
   assert.deepEqual(config.mcpServers.golf, {
     type: "stdio",
     command: "node",
@@ -37,6 +49,66 @@ test("MCP config launches the committed bundle with plugin variables", async () 
       GI_ACTIVE_TOKEN: "${GI_ACTIVE_TOKEN}",
     },
   });
+});
+
+test("no plugin config leaves an unexpanded ${PLUGIN_ROOT} placeholder", async () => {
+  const files = [
+    "mcp.json",
+    "mcp.stdio.json",
+    "manifest.json",
+    "plugin.json",
+    ".cursor-plugin/plugin.json",
+    ".claude-plugin/plugin.json",
+  ];
+  for (const file of files) {
+    const contents = await readFile(file, "utf8");
+    assert.equal(
+      /\$\{PLUGIN_ROOT\}|\$\{PLUGIN_DATA\}/.test(contents),
+      false,
+      `${file} must not rely on placeholders Cursor does not expand`,
+    );
+  }
+});
+
+test("public copy stays on the approved data and pricing wording", async () => {
+  const banned = [
+    /laser/i,
+    /\bdrones?\b/i,
+    /airplane/i,
+    /satellite/i,
+    /one[- ]time/i,
+    /\b50 (?:test )?credits\b/i,
+    /\b200 credits\b/i,
+  ];
+  const files = [
+    "README.md",
+    "skills/golf/SKILL.md",
+    "manifest.json",
+    "server.json",
+    "plugin.json",
+    ".cursor-plugin/plugin.json",
+    ".claude-plugin/plugin.json",
+    "src/index.ts",
+  ];
+  for (const file of files) {
+    const contents = await readFile(file, "utf8");
+    for (const pattern of banned) {
+      assert.equal(
+        pattern.test(contents),
+        false,
+        `${file} must not contain ${pattern}`,
+      );
+    }
+  }
+});
+
+test("the stdio bundle installers reference is committed", async () => {
+  const bundle = await readFile("dist/index.js", "utf8");
+  assert.ok(bundle.length > 0);
+
+  const pkg = JSON.parse(await readFile("package.json", "utf8"));
+  assert.ok(pkg.files.includes("dist"));
+  assert.ok(pkg.files.includes("mcp.json"));
 });
 
 test("registry manifests claim golf without displayName", async () => {
@@ -65,7 +137,7 @@ test("registry manifests claim golf without displayName", async () => {
   assert.equal("registryBaseUrl" in server.packages[0], false);
   assert.equal(
     server.packages[0].identifier,
-    "https://github.com/golf-data/golf/releases/download/v1.0.1/golf.mcpb",
+    "https://github.com/golf-data/golf/releases/download/v1.0.2/golf.mcpb",
   );
   assert.match(server.packages[0].fileSha256, /^[a-f0-9]{64}$/);
   assert.deepEqual(

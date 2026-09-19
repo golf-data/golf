@@ -1,10 +1,10 @@
 {
   "name": "golf",
-  "version": "1.0.1",
-  "description": "Golf Intelligence, by Stracka. The highest-quality proprietary golf course dataset for developers building a golf app. Continuously updated mapped course data — not a scrape. Search is free. Scorecards, GPS, and 3D greens via API.",
+  "version": "1.0.2",
+  "description": "Golf Intelligence, by Stracka. Proprietary StrackaGolf course data, updated daily. Search is free. Scorecards, GPS, and 3D greens are available via API.",
   "author": {
     "name": "Golf Intelligence, by Stracka",
-    "email": "data@golfintelligence.com"
+    "email": "support@golfintelligence.com"
   },
   "homepage": "https://golfintelligence.com/",
   "repository": "https://github.com/golf-data/golf",
@@ -22,12 +22,12 @@
       "GI_CLIENT_ID": {
         "type": "string",
         "title": "Golf Intelligence Client ID",
-        "description": "Client ID from API Account at https://console.golfintelligence.com/."
+        "description": "Client ID from API Account at console.golfintelligence.com."
       },
       "GI_ACTIVE_TOKEN": {
         "type": "string",
         "title": "Golf Intelligence Active Token",
-        "description": "Active Token from API Account at https://console.golfintelligence.com/. It is exchanged for a bearer token; do not enter a bearer token."
+        "description": "Active Token from API Account at console.golfintelligence.com. It is exchanged for a bearer token; do not enter a bearer token."
       }
     },
     "required": [
