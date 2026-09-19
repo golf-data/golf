@@ -151,8 +151,10 @@ fly secrets set GI_CLIENT_ID=... GI_ACTIVE_TOKEN=...
 fly deploy
 ```
 
-Set the custom domain only after the deployed `*.fly.dev` endpoint passes an
-MCP Inspector check. No deployment is performed by this repository.
+Tool names and descriptions are baked into the deployed bundle, so the hosted
+MCP keeps serving the previous copy until it is redeployed. Redeploy before
+refreshing the marketplace listing, and follow `docs/RELEASE.md` for the full
+order across Fly, the marketplace, and the MCP Registry.
 
 ## Repository layout
 
@@ -166,6 +168,7 @@ MCP Inspector check. No deployment is performed by this repository.
 - `mcp.stdio.json` — optional local stdio configuration for offline development
 - `skills/golf/SKILL.md` — workflow and spend-confirmation guidance
 - `docs/SMOKE-CHECKLIST.md` — post-deploy and post-publish verification steps
+- `docs/RELEASE.md` — Fly redeploy, GitHub release, and registry publish runbook
 - `src/` — TypeScript MCP server and API client
 - `dist/index.js` — committed stdio ESM bundle used by installers
 - `dist/http.js` — committed Streamable HTTP ESM bundle used by the container

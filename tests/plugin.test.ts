@@ -127,17 +127,19 @@ test("registry manifests claim golf without displayName", async () => {
   assert.equal(claude.mcpServers, "./mcp.json");
   assert.equal("displayName" in claude, false);
 
+  const { version } = JSON.parse(await readFile("package.json", "utf8"));
   const server = JSON.parse(await readFile("server.json", "utf8"));
   assert.equal(server.name, "io.github.golf-data/golf");
   assert.equal(server.title, "Golf Intelligence, by Stracka");
   assert.ok(server.description.length <= 100);
   assert.equal(server.websiteUrl, "https://golfintelligence.com/");
   assert.equal(server.repository.url, "https://github.com/golf-data/golf");
+  assert.equal(server.version, version);
   assert.equal(server.packages[0].registryType, "mcpb");
   assert.equal("registryBaseUrl" in server.packages[0], false);
   assert.equal(
     server.packages[0].identifier,
-    "https://github.com/golf-data/golf/releases/download/v1.0.2/golf.mcpb",
+    `https://github.com/golf-data/golf/releases/download/v${version}/golf.mcpb`,
   );
   assert.match(server.packages[0].fileSha256, /^[a-f0-9]{64}$/);
   assert.deepEqual(
