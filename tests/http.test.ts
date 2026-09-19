@@ -58,6 +58,11 @@ test("Streamable HTTP exposes health, tools, annotations, and header auth", asyn
   assert.equal(health.status, 200);
   assert.deepEqual(await health.json(), { status: "ok" });
 
+  const missingChallenge = await fetch(
+    `${baseUrl}/.well-known/openai-apps-challenge`,
+  );
+  assert.equal(missingChallenge.status, 404);
+
   const client = new Client({ name: "http-test", version: "1.0.0" });
   const transport = new StreamableHTTPClientTransport(
     new URL(`${baseUrl}/mcp`),
@@ -105,5 +110,54 @@ test("Streamable HTTP exposes health, tools, annotations, and header auth", asyn
     await new Promise<void>((resolve, reject) => {
       httpServer.close((error?: Error) => (error ? reject(error) : resolve()));
     });
+  }
+});
+
+test("OpenAI Apps domain challenge is served as text/plain from env", async () => {
+  async function listen(env: NodeJS.ProcessEnv) {
+    const app = createHttpApp({ env });
+    const httpServer = await new Promise<ReturnType<typeof app.listen>>(
+      (resolve) => {
+        const listening = app.listen(0, "127.0.0.1", () => resolve(listening));
+      },
+    );
+    const { port } = httpServer.address() as AddressInfo;
+    return { httpServer, baseUrl: `http://127.0.0.1:${port}` };
+  }
+
+  async function close(
+    httpServer: Awaited<ReturnType<typeof listen>>["httpServer"],
+  ) {
+    await new Promise<void>((resolve, reject) => {
+      httpServer.close((error?: Error) => (error ? reject(error) : resolve()));
+    });
+  }
+
+  const preferred = await listen({
+    OPENAI_APPS_CHALLENGE_TOKEN: " preferred-token ",
+    OPENAI_APPS_CHALLENGE: "fallback-token",
+  });
+  try {
+    const response = await fetch(
+      `${preferred.baseUrl}/.well-known/openai-apps-challenge`,
+    );
+    assert.equal(response.status, 200);
+    assert.match(response.headers.get("content-type") ?? "", /text\/plain/);
+    assert.equal(await response.text(), "preferred-token");
+  } finally {
+    await close(preferred.httpServer);
+  }
+
+  const fallback = await listen({
+    OPENAI_APPS_CHALLENGE: " fallback-token ",
+  });
+  try {
+    const response = await fetch(
+      `${fallback.baseUrl}/.well-known/openai-apps-challenge`,
+    );
+    assert.equal(response.status, 200);
+    assert.equal(await response.text(), "fallback-token");
+  } finally {
+    await close(fallback.httpServer);
   }
 });

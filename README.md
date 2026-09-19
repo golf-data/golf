@@ -102,7 +102,10 @@ https://mcp.golfintelligence.com/mcp
 ```
 
 The production HTTP entrypoint serves that transport at `/mcp` and a health
-check at `/health`. Start the HTTP server locally with:
+check at `/health`. For OpenAI Apps domain verification it also serves
+`GET /.well-known/openai-apps-challenge` as `text/plain` when
+`OPENAI_APPS_CHALLENGE_TOKEN` (or `OPENAI_APPS_CHALLENGE`) is set; otherwise
+that path returns 404. Start the HTTP server locally with:
 
 ```bash
 npm run build
@@ -148,8 +151,14 @@ change `app`), then set runtime secrets and deploy:
 
 ```bash
 fly secrets set GI_CLIENT_ID=... GI_ACTIVE_TOKEN=...
+fly secrets set OPENAI_APPS_CHALLENGE_TOKEN=...
 fly deploy
 ```
+
+Set `OPENAI_APPS_CHALLENGE_TOKEN` to the token shown in OpenAI Platform domain
+verification. Do not commit that token. After deploy,
+`GET https://mcp.golfintelligence.com/.well-known/openai-apps-challenge`
+should return the token as `text/plain`.
 
 Tool names and descriptions are baked into the deployed bundle, so the hosted
 MCP keeps serving the previous copy until it is redeployed. Redeploy before
