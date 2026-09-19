@@ -33,7 +33,9 @@ curl -sS https://mcp.golfintelligence.com/mcp \
 ```
 
 Expect a result containing `serverInfo.name` of `golf` and a `tools`
-capability.
+capability. `serverInfo.version` must match the version in `package.json`; an
+older version means the deployment is stale and is still serving retired tool
+descriptions.
 
 ## 3. `tools/list` returns all five tools
 
@@ -52,6 +54,17 @@ Expect `search_course_groups`, `get_course_group_scorecard`,
 
 An incomplete credential pair must fail fast: sending only `X-GI-Client-ID`
 returns HTTP 400 with `must be provided together`.
+
+The served descriptions must also match the approved copy. This must print
+nothing:
+
+```bash
+curl -sS https://mcp.golfintelligence.com/mcp \
+  -H 'Content-Type: application/json' \
+  -H 'Accept: application/json, text/event-stream' \
+  -d '{"jsonrpc":"2.0","id":3,"method":"tools/list","params":{}}' \
+  | grep -Eio 'laser|drone|airplane|satellite'
+```
 
 ## 4. Free search works end to end
 
