@@ -2,14 +2,11 @@
   "$schema": "https://agent-plugins.org/schemas/1.0.0/mcp.schema.json",
   "mcpServers": {
     "golf": {
-      "type": "stdio",
-      "command": "node",
-      "args": [
-        "${CURSOR_PLUGIN_ROOT}/dist/index.js"
-      ],
-      "env": {
-        "GI_CLIENT_ID": "${GI_CLIENT_ID}",
-        "GI_ACTIVE_TOKEN": "${GI_ACTIVE_TOKEN}"
+      "type": "http",
+      "url": "https://mcp.golfintelligence.com/mcp",
+      "headers": {
+        "X-GI-Client-ID": "${GI_CLIENT_ID}",
+        "X-GI-Active-Token": "${GI_ACTIVE_TOKEN}"
       }
     }
   }

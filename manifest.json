@@ -2,12 +2,12 @@
   "manifest_version": "0.3",
   "name": "golf",
   "display_name": "Golf Intelligence, by Stracka",
-  "version": "1.0.1",
-  "description": "Highest-quality proprietary mapped golf course dataset. Search is free.",
-  "long_description": "Golf Intelligence, by Stracka. The highest-quality proprietary golf course dataset for developers building a golf app. Continuously updated mapped course data — not a scrape. Search is free. Scorecards, GPS, and 3D greens via API.",
+  "version": "1.0.2",
+  "description": "Proprietary StrackaGolf course data, updated daily. Search is free.",
+  "long_description": "Golf Intelligence, by Stracka. Proprietary StrackaGolf course data, updated daily. Search is free. Scorecards, GPS, and 3D greens are available via API.",
   "author": {
     "name": "Golf Intelligence, by Stracka",
-    "email": "data@golfintelligence.com",
+    "email": "support@golfintelligence.com",
     "url": "https://golfintelligence.com/"
   },
   "repository": {
@@ -16,7 +16,7 @@
   },
   "homepage": "https://golfintelligence.com/",
   "documentation": "https://github.com/golf-data/golf#readme",
-  "support": "mailto:data@golfintelligence.com",
+  "support": "mailto:support@golfintelligence.com",
   "license": "MIT",
   "keywords": ["golf", "golf-course", "mcp", "mcp-server", "mapping"],
   "server": {
@@ -35,14 +35,14 @@
     "GI_CLIENT_ID": {
       "type": "string",
       "title": "Golf Intelligence Client ID",
-      "description": "Client ID from API Account at https://console.golfintelligence.com/.",
+      "description": "Client ID from API Account at console.golfintelligence.com.",
       "required": true,
       "sensitive": false
     },
     "GI_ACTIVE_TOKEN": {
       "type": "string",
       "title": "Golf Intelligence Active Token",
-      "description": "Active Token from API Account at https://console.golfintelligence.com/. It is exchanged for a bearer token; do not enter a bearer token.",
+      "description": "Active Token from API Account at console.golfintelligence.com. It is exchanged for a bearer token; do not enter a bearer token.",
       "required": true,
       "sensitive": true
     }

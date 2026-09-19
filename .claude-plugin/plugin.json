@@ -1,11 +1,11 @@
 {
   "$schema": "https://json.schemastore.org/claude-code-plugin-manifest.json",
   "name": "golf",
-  "version": "1.0.1",
-  "description": "Golf Intelligence, by Stracka. The highest-quality proprietary golf course dataset for developers building a golf app. Continuously updated mapped course data — not a scrape. Search is free. Scorecards, GPS, and 3D greens via API.",
+  "version": "1.0.2",
+  "description": "Golf Intelligence, by Stracka. Proprietary StrackaGolf course data, updated daily. Search is free. Scorecards, GPS, and 3D greens are available via API.",
   "author": {
     "name": "Golf Intelligence, by Stracka",
-    "email": "data@golfintelligence.com",
+    "email": "support@golfintelligence.com",
     "url": "https://golfintelligence.com/"
   },
   "homepage": "https://golfintelligence.com/",

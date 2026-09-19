@@ -15,8 +15,10 @@ import { fileURLToPath } from "node:url";
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const outputName = "golf.mcpb";
 const outputPath = path.join(root, outputName);
-const identifier =
-  "https://github.com/golf-data/golf/releases/download/v1.0.1/golf.mcpb";
+const { version } = JSON.parse(
+  await readFile(path.join(root, "package.json"), "utf8"),
+);
+const identifier = `https://github.com/golf-data/golf/releases/download/v${version}/golf.mcpb`;
 
 const staging = await mkdtemp(path.join(tmpdir(), "golf-mcpb-"));
 
@@ -49,6 +51,7 @@ try {
   if (!pkg || pkg.registryType !== "mcpb") {
     throw new Error("server.json is missing an mcpb package entry");
   }
+  server.version = version;
   pkg.identifier = identifier;
   pkg.fileSha256 = fileSha256;
   await writeFile(serverPath, `${JSON.stringify(server, null, 2)}\n`);

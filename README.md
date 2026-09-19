@@ -1,12 +1,10 @@
 # Golf Intelligence, by Stracka
 
-> Golf Intelligence, by Stracka. The highest-quality proprietary golf course
-> dataset for developers building a golf app. Continuously updated mapped
-> course data — not a scrape. Search is free. Scorecards, GPS, and 3D greens
-> via API.
+> Golf Intelligence, by Stracka. Proprietary StrackaGolf course data for
+> developers building a golf app, updated daily. Search is free. Scorecards,
+> GPS, and 3D greens are available via API.
 
-Golf Intelligence is a proprietary curated dataset of mapped golf courses,
-continuously updated — not a scrape or a clone of a GitHub golf course API.
+Golf Intelligence provides proprietary StrackaGolf course data, updated daily.
 Learn more at [golfintelligence.com](https://golfintelligence.com/).
 
 This repository is the installable Cursor / Grok Bot plugin with handle
@@ -18,11 +16,24 @@ Marketplace reviewers can submit that URL at
 [cursor.com/marketplace/publish](https://cursor.com/marketplace/publish). The
 catalog title is **Golf Intelligence, by Stracka**.
 
-The bundled `mcp.json` launches `node` with
-`${CURSOR_PLUGIN_ROOT}/dist/index.js`. Cursor does not expand Agent Plugins
-`${PLUGIN_ROOT}`, so that placeholder would be passed through literally and the
-connector would fail to load. Claude Code expands `${CLAUDE_PLUGIN_ROOT}` if a
-host-specific MCP config is added later.
+The bundled `mcp.json` connects to the hosted MCP at
+`https://mcp.golfintelligence.com/mcp` over Streamable HTTP, so installing the
+plugin never depends on a local Node build. Your console credentials travel as
+the `X-GI-Client-ID` and `X-GI-Active-Token` headers, filled from the plugin
+variables declared in `.cursor-plugin/plugin.json`.
+
+Earlier releases launched `node` against a plugin-relative `dist/index.js`.
+Cursor does not expand the Agent Plugins `${PLUGIN_ROOT}` variable, so that
+placeholder reached Node literally and the connector failed with
+`Cannot find module '.../${PLUGIN_ROOT}/dist/index.js'`. The hosted connector
+removes that failure mode entirely.
+
+`mcp.stdio.json` keeps the local stdio server for offline and development use.
+It is not auto-discovered; copy its `golf` entry into `.cursor/mcp.json` (using
+`${workspaceFolder}` in a checkout) or point `mcpServers` at it. Any local
+stdio config must use `${CURSOR_PLUGIN_ROOT}`, never `${PLUGIN_ROOT}`. The
+committed `dist/index.js` bundle ships in the repository and in the MCPB
+package, so the stdio path works without running a build first.
 
 The official MCP Registry name is **`io.github.golf-data/golf`**. The registry
 does not accept a bare `golf` name. Cursor, Agent Plugins, and Claude Code
@@ -30,9 +41,9 @@ plugin handles remain `golf`.
 
 ## Get API access
 
-Create an API Account at
-[console.golfintelligence.com](https://console.golfintelligence.com/), then
-configure the plugin's two required variables:
+Sign in at console.golfintelligence.com without a password: enter your email on
+the login page, request a verification code, then enter the code after it is
+sent. Create an API Account and configure the plugin's two required variables:
 
 - `GI_CLIENT_ID`: your Client ID
 - `GI_ACTIVE_TOKEN`: your Active Token
@@ -40,15 +51,17 @@ configure the plugin's two required variables:
 The Active Token is exchanged for a short-lived bearer token. It is **not** a
 bearer token; do not paste a bearer token into `GI_ACTIVE_TOKEN`.
 
-Plans:
+Use credentials from your own console account. This project does not provide
+demo tokens.
 
-- **Personal:** $49 for 50 test credits for your own-game Cursor, Grok, or
-  Claude app. [Buy Personal](https://buy.stripe.com/cNieVecRR4Re6dAakbdnW0e).
-- **Starter:** $399/month for 10,000 credits when shipping an app to other
-  users. Email [data@golfintelligence.com](mailto:data@golfintelligence.com);
-  Starter does not have a checkout link.
+Plans are monthly and can be upgraded or downgraded self-serve in the console:
 
-Questions about data, plans, or integration:
+- **Tester:** $49/month for 100 credits/month.
+- **Starter:** $399/month for 10,000 credits/month.
+
+For billing, credits, plans, login, or credential help, email
+[support@golfintelligence.com](mailto:support@golfintelligence.com). For course
+data updates, email
 [data@golfintelligence.com](mailto:data@golfintelligence.com).
 
 ## Tools and credits
@@ -82,17 +95,14 @@ never logged.
 
 ## Streamable HTTP
 
-The production HTTP entrypoint serves the official MCP Streamable HTTP
-transport at `/mcp` and a health check at `/health`. The intended custom-domain
-URL shape is:
+The hosted MCP is available via the official MCP Streamable HTTP transport at:
 
 ```text
 https://mcp.golfintelligence.com/mcp
 ```
 
-This repository does not claim that URL is live; DNS and deployment must be
-completed before it is submitted for review. Start the HTTP server locally
-with:
+The production HTTP entrypoint serves that transport at `/mcp` and a health
+check at `/health`. Start the HTTP server locally with:
 
 ```bash
 npm run build
@@ -141,8 +151,10 @@ fly secrets set GI_CLIENT_ID=... GI_ACTIVE_TOKEN=...
 fly deploy
 ```
 
-Set the custom domain only after the deployed `*.fly.dev` endpoint passes an
-MCP Inspector check. No deployment is performed by this repository.
+Tool names and descriptions are baked into the deployed bundle, so the hosted
+MCP keeps serving the previous copy until it is redeployed. Redeploy before
+refreshing the marketplace listing, and follow `docs/RELEASE.md` for the full
+order across Fly, the marketplace, and the MCP Registry.
 
 ## Repository layout
 
@@ -152,8 +164,11 @@ MCP Inspector check. No deployment is performed by this repository.
 - `server.json` — official MCP Registry metadata (`io.github.golf-data/golf`)
 - `manifest.json` — MCPB bundle manifest for the stdio Node server
 - `.github/workflows/publish-mcp.yml` — publishes `io.github.golf-data/golf` to the official MCP Registry via GitHub OIDC
-- `mcp.json` — bundled `golf` MCP server configuration
+- `mcp.json` — bundled `golf` connector pointing at the hosted MCP endpoint
+- `mcp.stdio.json` — optional local stdio configuration for offline development
 - `skills/golf/SKILL.md` — workflow and spend-confirmation guidance
+- `docs/SMOKE-CHECKLIST.md` — post-deploy and post-publish verification steps
+- `docs/RELEASE.md` — Fly redeploy, GitHub release, and registry publish runbook
 - `src/` — TypeScript MCP server and API client
 - `dist/index.js` — committed stdio ESM bundle used by installers
 - `dist/http.js` — committed Streamable HTTP ESM bundle used by the container
@@ -168,7 +183,7 @@ npm run build
 npm run pack:mcpb
 ```
 
-`pack:mcpb` uses the official `@anthropic-ai/mcpb pack` CLI to produce `golf.mcpb` and writes its SHA-256 into `server.json`. GitHub Releases host that asset at `https://github.com/golf-data/golf/releases/download/v1.0.1/golf.mcpb`.
+`pack:mcpb` uses the official `@anthropic-ai/mcpb pack` CLI to produce `golf.mcpb` and writes its SHA-256 into `server.json`. GitHub Releases host that asset at `https://github.com/golf-data/golf/releases/download/v1.0.2/golf.mcpb`.
 
 The plugin code is available under the MIT License. Golf Intelligence API data
 remains subject to the terms at

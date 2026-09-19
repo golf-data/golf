@@ -5,13 +5,12 @@ description: Use Golf Intelligence course search, scorecard, mapped course data,
 
 # Golf Intelligence, by Stracka
 
-Use Golf Intelligence for developers building a golf app. The proprietary
-mapped course dataset is continuously updated — not a scrape. Data quality is
-managed course by course; this is not a clone of a GitHub golf course API.
+Use Golf Intelligence for developers building a golf app. Proprietary
+StrackaGolf course data is updated daily and managed course by course.
 
-Learn more at https://golfintelligence.com/. Create and manage an API Account at
-https://console.golfintelligence.com/. For sales or technical help, email
-data@golfintelligence.com.
+Learn more at https://golfintelligence.com/. At console.golfintelligence.com,
+enter an email and request a verification code to sign in, then create or
+manage an API Account. The code is sent only after it is requested.
 
 ## Correct workflow
 
@@ -33,15 +32,18 @@ confirmed the named call and cost, do not set `confirm_spend=true`.
 
 ## Access
 
-- Personal: $49 for 50 test credits, intended for own-game
-  Cursor/Grok/Claude apps. Buy at
-  https://buy.stripe.com/cNieVecRR4Re6dAakbdnW0e.
-- Starter: $399/month for 10,000 credits when shipping to other users. Email
-  data@golfintelligence.com; there is no Starter checkout link.
+- Tester: $49/month for 100 credits/month.
+- Starter: $399/month for 10,000 credits/month.
+- Upgrade or downgrade self-serve in the console.
 
 Configure `GI_CLIENT_ID` and `GI_ACTIVE_TOKEN` from **API Account** in the
 console. The Active Token is exchanged for an API bearer token. It is not
 itself a bearer token, so never place a bearer token in `GI_ACTIVE_TOKEN`.
+Use credentials from the console; never invent or suggest demo tokens.
+
+Use the hosted MCP at https://mcp.golfintelligence.com/mcp. For billing,
+credits, plans, login, or credential help, email support@golfintelligence.com.
+For course data updates, email data@golfintelligence.com.
 
 The plugin code is MIT licensed. API data remains governed by Golf Intelligence
 terms.
