@@ -80,7 +80,8 @@ unless `confirm_spend=true`.
 
 ## Authentication
 
-The server exchanges the configured credentials with:
+The local stdio server and legacy per-user HTTP credential headers exchange the
+configured credentials with:
 
 ```text
 POST https://api.golfintelligence.com/auth/authenticateToken
@@ -92,6 +93,13 @@ client_id=<GI_CLIENT_ID>
 It sends the returned `access_token` as `Authorization: Bearer <access_token>`,
 caches it only in memory, and refreshes once after an HTTP 401. Credentials are
 never logged.
+
+The hosted MCP additionally implements OAuth 2.1 authorization-code flow with
+S256 PKCE for ChatGPT. Its dedicated authorization page accepts each user's own
+console Client ID and Active Token, validates them with Golf Intelligence, and
+binds that account to encrypted access and refresh tokens. See
+[docs/OPENAI-CHATGPT-OAUTH.md](docs/OPENAI-CHATGPT-OAUTH.md) for discovery URLs,
+OpenAI portal settings, reviewer steps, and deployment secrets.
 
 ## Streamable HTTP
 
@@ -115,20 +123,19 @@ PORT=3000 npm run start:http
 It binds to `0.0.0.0:$PORT`. The existing `node dist/index.js` stdio entrypoint
 and all plugin packages remain unchanged.
 
-The HTTP service resolves Golf Intelligence credentials in this order:
+The HTTP service accepts Golf Intelligence identity in either of these forms:
 
-1. `X-GI-Client-ID` and `X-GI-Active-Token` HTTP headers supplied together on
-   every MCP request.
-2. Server-side `GI_CLIENT_ID` and `GI_ACTIVE_TOKEN` environment variables.
+1. An OAuth bearer token issued by this service after the user signs in with
+   their own GI account.
+2. Legacy `X-GI-Client-ID` and `X-GI-Active-Token` headers supplied together on
+   every MCP request by existing plugin installs.
 
-Codex supports static `http_headers` and environment-backed `env_http_headers`
-for Streamable HTTP MCP servers. For OpenAI review, either configure a
-dedicated review API account as deployment environment variables or provide
-the two custom headers if the review configuration supports them. The Active
-Token remains an exchange credential and must not be sent as an
-`Authorization: Bearer` value. A production deployment should use a dedicated
-account with an appropriate credit limit because environment-based credentials
-make the lookup tools available to every caller of the public endpoint.
+There is deliberately no server-wide `GI_CLIENT_ID` / `GI_ACTIVE_TOKEN`
+fallback. The HTTP entrypoint ignores those environment variables, so an
+anonymous caller cannot inherit a deployment account or spend its credits.
+Missing or invalid OAuth returns HTTP 401 with an OAuth protected-resource
+challenge. The Active Token is an exchange credential and must not be sent as
+an `Authorization: Bearer` value.
 
 Every tool explicitly advertises these MCP annotations:
 
@@ -136,7 +143,9 @@ Every tool explicitly advertises these MCP annotations:
 - `openWorldHint: false` — no tool writes to public or external systems.
 - `destructiveHint: false` — no tool deletes, overwrites, publishes, or sends
   anything.
-- `idempotentHint: true` — repeating a lookup has no additional side effect.
+- `idempotentHint: true` for free search.
+- `idempotentHint: false` for paid tools because every repeated paid invocation
+  can consume credits again.
 
 These sentences can also be used as the annotation justifications in the
 OpenAI submission form. Paid lookups still require `confirm_spend=true` at the
@@ -147,13 +156,19 @@ same credit costs documented above.
 `Dockerfile` builds both transports without embedding credentials.
 `fly.toml` configures a small Fly.io service and checks `/health`. Before the
 first deploy, confirm that the globally unique Fly app name is available (or
-change `app`), then set runtime secrets and deploy:
+change `app`), then configure the OAuth secrets documented in
+`docs/OPENAI-CHATGPT-OAUTH.md` and deploy. At minimum:
 
 ```bash
-fly secrets set GI_CLIENT_ID=... GI_ACTIVE_TOKEN=...
+fly secrets set OAUTH_ENCRYPTION_KEY="$(openssl rand -base64 32)"
+fly secrets set OAUTH_ISSUER=https://mcp.golfintelligence.com
 fly secrets set OPENAI_APPS_CHALLENGE_TOKEN=...
 fly deploy
 ```
+
+Do not configure a shared GI account for hosted HTTP callers. If
+`GI_CLIENT_ID` / `GI_ACTIVE_TOKEN` exist for a separate bootstrap or stdio
+workflow, they do not authorize HTTP requests.
 
 Set `OPENAI_APPS_CHALLENGE_TOKEN` to the token shown in OpenAI Platform domain
 verification. Do not commit that token. After deploy,

@@ -18658,8 +18658,8 @@ var require_escape_html = __commonJS({
   "node_modules/escape-html/index.js"(exports, module) {
     "use strict";
     var matchHtmlRegExp = /["'&<>]/;
-    module.exports = escapeHtml;
-    function escapeHtml(string4) {
+    module.exports = escapeHtml2;
+    function escapeHtml2(string4) {
       var str = "" + string4;
       var match = matchHtmlRegExp.exec(str);
       if (!match) {
@@ -18790,13 +18790,13 @@ var require_finalhandler = __commonJS({
     "use strict";
     var debug = require_src()("finalhandler");
     var encodeUrl = require_encodeurl();
-    var escapeHtml = require_escape_html();
+    var escapeHtml2 = require_escape_html();
     var onFinished = require_on_finished();
     var parseUrl = require_parseurl();
     var statuses = require_statuses();
     var isFinished = onFinished.isFinished;
     function createHtmlDocument(message) {
-      var body = escapeHtml(message).replaceAll("\n", "<br>").replaceAll("  ", " &nbsp;");
+      var body = escapeHtml2(message).replaceAll("\n", "<br>").replaceAll("  ", " &nbsp;");
       return '<!DOCTYPE html>\n<html lang="en">\n<head>\n<meta charset="utf-8">\n<title>Error</title>\n</head>\n<body>\n<pre>' + body + "</pre>\n</body>\n</html>\n";
     }
     module.exports = finalhandler;
@@ -22859,7 +22859,7 @@ var require_send = __commonJS({
     var createError = require_http_errors();
     var debug = require_src()("send");
     var encodeUrl = require_encodeurl();
-    var escapeHtml = require_escape_html();
+    var escapeHtml2 = require_escape_html();
     var etag = require_etag();
     var fresh = require_fresh();
     var fs = __require("fs");
@@ -22912,7 +22912,7 @@ var require_send = __commonJS({
       }
       var res = this.res;
       var msg = statuses.message[status] || String(status);
-      var doc = createHtmlDocument("Error", escapeHtml(msg));
+      var doc = createHtmlDocument("Error", escapeHtml2(msg));
       clearHeaders(res);
       if (err && err.headers) {
         setHeaders(res, err.headers);
@@ -23012,7 +23012,7 @@ var require_send = __commonJS({
         return;
       }
       var loc = encodeUrl(collapseLeadingSlashes(this.path + "/"));
-      var doc = createHtmlDocument("Redirecting", "Redirecting to " + escapeHtml(loc));
+      var doc = createHtmlDocument("Redirecting", "Redirecting to " + escapeHtml2(loc));
       res.statusCode = 301;
       res.setHeader("Content-Type", "text/html; charset=UTF-8");
       res.setHeader("Content-Length", Buffer.byteLength(doc));
@@ -23416,7 +23416,7 @@ var require_response = __commonJS({
     var createError = require_http_errors();
     var deprecate = require_depd()("express");
     var encodeUrl = require_encodeurl();
-    var escapeHtml = require_escape_html();
+    var escapeHtml2 = require_escape_html();
     var http = __require("node:http");
     var onFinished = require_on_finished();
     var mime = require_mime_types();
@@ -23755,7 +23755,7 @@ var require_response = __commonJS({
           body = statuses.message[status] + ". Redirecting to " + address;
         },
         html: function() {
-          var u = escapeHtml(address);
+          var u = escapeHtml2(address);
           body = "<p>" + statuses.message[status] + ". Redirecting to " + u + "</p>";
         },
         default: function() {
@@ -23883,7 +23883,7 @@ var require_serve_static = __commonJS({
   "node_modules/serve-static/index.js"(exports, module) {
     "use strict";
     var encodeUrl = require_encodeurl();
-    var escapeHtml = require_escape_html();
+    var escapeHtml2 = require_escape_html();
     var parseUrl = require_parseurl();
     var resolve = __require("path").resolve;
     var send = require_send();
@@ -23969,7 +23969,7 @@ var require_serve_static = __commonJS({
         originalUrl.path = null;
         originalUrl.pathname = collapseLeadingSlashes(originalUrl.pathname + "/");
         var loc = encodeUrl(url2.format(originalUrl));
-        var doc = createHtmlDocument("Redirecting", "Redirecting to " + escapeHtml(loc));
+        var doc = createHtmlDocument("Redirecting", "Redirecting to " + escapeHtml2(loc));
         res.statusCode = 301;
         res.setHeader("Content-Type", "text/html; charset=UTF-8");
         res.setHeader("Content-Length", Buffer.byteLength(doc));
@@ -49349,6 +49349,9 @@ var StreamableHTTPServerTransport = class {
   }
 };
 
+// src/http.ts
+var import_express3 = __toESM(require_express2(), 1);
+
 // src/api.ts
 var API_BASE_URL = "https://api.golfintelligence.com";
 var AUTH_URL = `${API_BASE_URL}/auth/authenticateToken`;
@@ -49361,6 +49364,9 @@ var GolfIntelligenceClient = class {
   fetchImpl;
   accessToken;
   accessTokenExpiresAt = 0;
+  async authenticate() {
+    await this.getAccessToken();
+  }
   async request(method, path, options = {}) {
     const url2 = new URL(path, API_BASE_URL);
     for (const [key, value] of Object.entries(options.query ?? {})) {
@@ -57506,6 +57512,17 @@ var READ_ONLY_LOOKUP_ANNOTATIONS = {
   destructiveHint: false,
   idempotentHint: true
 };
+var PAID_READ_ONLY_LOOKUP_ANNOTATIONS = {
+  ...READ_ONLY_LOOKUP_ANNOTATIONS,
+  // A repeated paid GI API invocation can consume credits again.
+  idempotentHint: false
+};
+var OAUTH_SECURITY = [{ type: "oauth2", scopes: ["golf:read"] }];
+var OAUTH_SECURITY_CONFIG = {
+  securitySchemes: OAUTH_SECURITY,
+  // Backward-compatible mirror used by existing OpenAI Apps clients.
+  _meta: { securitySchemes: OAUTH_SECURITY }
+};
 function toolResult(value) {
   return {
     content: [
@@ -57531,7 +57548,8 @@ function createServer(client = api) {
         rows: external_exports.number().int().positive().optional().describe("Maximum number of results"),
         offset: external_exports.number().int().nonnegative().optional().describe("Result offset for pagination")
       },
-      annotations: READ_ONLY_LOOKUP_ANNOTATIONS
+      annotations: READ_ONLY_LOOKUP_ANNOTATIONS,
+      ...OAUTH_SECURITY_CONFIG
     },
     async ({ keywords, rows, offset }) => toolResult(
       await client.request("POST", "/courses/searchCourseGroups", {
@@ -57552,7 +57570,8 @@ function createServer(client = api) {
         PublicId: external_exports.string().min(1).describe("Course group PublicId from search"),
         confirm_spend: external_exports.boolean().describe("Must be true to authorize spending 1 credit")
       },
-      annotations: READ_ONLY_LOOKUP_ANNOTATIONS
+      annotations: PAID_READ_ONLY_LOOKUP_ANNOTATIONS,
+      ...OAUTH_SECURITY_CONFIG
     },
     async ({ PublicId, confirm_spend }) => {
       requireSpendConfirmation(
@@ -57576,7 +57595,8 @@ function createServer(client = api) {
         PublicId: external_exports.string().min(1).describe("Course group PublicId from search"),
         confirm_spend: external_exports.boolean().describe("Must be true to authorize spending 2 credits")
       },
-      annotations: READ_ONLY_LOOKUP_ANNOTATIONS
+      annotations: PAID_READ_ONLY_LOOKUP_ANNOTATIONS,
+      ...OAUTH_SECURITY_CONFIG
     },
     async ({ PublicId, confirm_spend }) => {
       requireSpendConfirmation(confirm_spend, 2, "get_course_group_gps");
@@ -57596,7 +57616,8 @@ function createServer(client = api) {
         PublicId: external_exports.string().min(1).describe("Course group PublicId from search"),
         confirm_spend: external_exports.boolean().describe("Must be true to authorize spending 3 credits")
       },
-      annotations: READ_ONLY_LOOKUP_ANNOTATIONS
+      annotations: PAID_READ_ONLY_LOOKUP_ANNOTATIONS,
+      ...OAUTH_SECURITY_CONFIG
     },
     async ({ PublicId, confirm_spend }) => {
       requireSpendConfirmation(confirm_spend, 3, "get_course_group_detail");
@@ -57617,7 +57638,8 @@ function createServer(client = api) {
         imageSizeType: external_exports.enum(["Portrait", "Square"]).describe("Requested image shape"),
         confirm_spend: external_exports.boolean().describe("Must be true to authorize spending 1 credit")
       },
-      annotations: READ_ONLY_LOOKUP_ANNOTATIONS
+      annotations: PAID_READ_ONLY_LOOKUP_ANNOTATIONS,
+      ...OAUTH_SECURITY_CONFIG
     },
     async ({ holeId, imageSizeType, confirm_spend }) => {
       requireSpendConfirmation(confirm_spend, 1, "get_green_slope_image");
@@ -57640,6 +57662,450 @@ if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) 
     console.error(`Golf MCP server failed: ${message}`);
     process.exit(1);
   });
+}
+
+// src/oauth.ts
+import {
+  createCipheriv,
+  createDecipheriv,
+  createHash,
+  randomBytes,
+  timingSafeEqual
+} from "node:crypto";
+var GOLF_SCOPE = "golf:read";
+var RESOURCE_PATH = "/mcp";
+var AUTH_REQUEST_LIFETIME_SECONDS = 10 * 60;
+var AUTH_CODE_LIFETIME_SECONDS = 5 * 60;
+var ACCESS_TOKEN_LIFETIME_SECONDS = 60 * 60;
+var REFRESH_TOKEN_LIFETIME_SECONDS = 30 * 24 * 60 * 60;
+var OAuthError = class extends Error {
+  constructor(error51, message, status = 400) {
+    super(message);
+    this.error = error51;
+    this.status = status;
+  }
+  error;
+  status;
+};
+function requiredEncryptionKey(env) {
+  const encoded = env.OAUTH_ENCRYPTION_KEY?.trim();
+  if (!encoded) {
+    throw new Error(
+      "OAUTH_ENCRYPTION_KEY must be set to a base64-encoded 32-byte key."
+    );
+  }
+  const key = Buffer.from(encoded, "base64");
+  if (key.length !== 32) {
+    throw new Error(
+      "OAUTH_ENCRYPTION_KEY must decode to exactly 32 bytes."
+    );
+  }
+  return key;
+}
+function normalizedOrigin(value) {
+  const url2 = new URL(value);
+  if (url2.protocol !== "https:" && url2.hostname !== "127.0.0.1") {
+    throw new Error("OAUTH_ISSUER must use HTTPS.");
+  }
+  if (url2.pathname !== "/" || url2.search || url2.hash) {
+    throw new Error("OAUTH_ISSUER must be an origin without a path.");
+  }
+  return url2.origin;
+}
+function csv(value) {
+  return (value ?? "").split(",").map((item) => item.trim()).filter(Boolean);
+}
+var OAuthService = class {
+  config;
+  key;
+  redeemedCodes = /* @__PURE__ */ new Map();
+  constructor(env) {
+    this.key = requiredEncryptionKey(env);
+    const issuer = normalizedOrigin(
+      env.OAUTH_ISSUER?.trim() || "https://mcp.golfintelligence.com"
+    );
+    const staticClientId = env.OAUTH_CLIENT_ID?.trim() || void 0;
+    const staticRedirectUris = csv(env.OAUTH_REDIRECT_URIS);
+    if (staticClientId && staticRedirectUris.length === 0) {
+      throw new Error(
+        "OAUTH_REDIRECT_URIS is required when OAUTH_CLIENT_ID is set."
+      );
+    }
+    this.config = {
+      issuer,
+      resource: `${issuer}${RESOURCE_PATH}`,
+      documentationUrl: "https://github.com/golf-data/golf/blob/main/docs/OPENAI-CHATGPT-OAUTH.md",
+      staticClientId,
+      staticClientSecret: env.OAUTH_CLIENT_SECRET?.trim() || void 0,
+      staticRedirectUris,
+      allowedGiClientIds: csv(env.OAUTH_ALLOWED_GI_CLIENT_IDS).length > 0 ? new Set(csv(env.OAUTH_ALLOWED_GI_CLIENT_IDS)) : void 0
+    };
+  }
+  protectedResourceMetadata() {
+    return {
+      resource: this.config.resource,
+      authorization_servers: [this.config.issuer],
+      scopes_supported: [GOLF_SCOPE],
+      resource_documentation: this.config.documentationUrl,
+      bearer_methods_supported: ["header"]
+    };
+  }
+  authorizationServerMetadata() {
+    const methods = ["none"];
+    if (this.config.staticClientSecret) {
+      methods.push("client_secret_basic", "client_secret_post");
+    }
+    return {
+      issuer: this.config.issuer,
+      authorization_endpoint: `${this.config.issuer}/oauth/authorize`,
+      token_endpoint: `${this.config.issuer}/oauth/token`,
+      registration_endpoint: `${this.config.issuer}/oauth/register`,
+      response_types_supported: ["code"],
+      grant_types_supported: ["authorization_code", "refresh_token"],
+      token_endpoint_auth_methods_supported: methods,
+      code_challenge_methods_supported: ["S256"],
+      scopes_supported: [GOLF_SCOPE]
+    };
+  }
+  registerClient(input) {
+    if (!isRecord(input) || !Array.isArray(input.redirect_uris)) {
+      throw new OAuthError("invalid_client_metadata", "redirect_uris is required.");
+    }
+    const redirectUris = input.redirect_uris;
+    if (redirectUris.length === 0 || redirectUris.some(
+      (value) => typeof value !== "string" || !isAllowedRedirectUri(value)
+    )) {
+      throw new OAuthError(
+        "invalid_redirect_uri",
+        "Every redirect URI must be an absolute HTTPS URL."
+      );
+    }
+    if (input.token_endpoint_auth_method !== void 0 && input.token_endpoint_auth_method !== "none") {
+      throw new OAuthError(
+        "invalid_client_metadata",
+        "Dynamic clients must use token_endpoint_auth_method=none."
+      );
+    }
+    const clientId = this.seal("dynamic_client", {
+      kind: "dynamic_client",
+      iat: nowSeconds(),
+      redirectUris
+    });
+    return {
+      client_id: clientId,
+      client_id_issued_at: nowSeconds(),
+      redirect_uris: redirectUris,
+      token_endpoint_auth_method: "none",
+      grant_types: ["authorization_code", "refresh_token"],
+      response_types: ["code"]
+    };
+  }
+  createAuthorizationRequest(query) {
+    const responseType = stringValue(query.response_type);
+    const clientId = stringValue(query.client_id);
+    const redirectUri = stringValue(query.redirect_uri);
+    const resource = stringValue(query.resource);
+    const codeChallenge = stringValue(query.code_challenge);
+    const codeChallengeMethod = stringValue(query.code_challenge_method);
+    const requestedScope = stringValue(query.scope) || GOLF_SCOPE;
+    if (responseType !== "code") {
+      throw new OAuthError("unsupported_response_type", "response_type must be code.");
+    }
+    if (!clientId || !redirectUri) {
+      throw new OAuthError("invalid_request", "client_id and redirect_uri are required.");
+    }
+    this.validateClientRedirect(clientId, redirectUri);
+    if (resource !== this.config.resource) {
+      throw new OAuthError(
+        "invalid_target",
+        `resource must be ${this.config.resource}.`
+      );
+    }
+    if (codeChallengeMethod !== "S256" || !codeChallenge || !/^[A-Za-z0-9_-]{43}$/.test(codeChallenge)) {
+      throw new OAuthError(
+        "invalid_request",
+        "S256 PKCE with a valid code_challenge is required."
+      );
+    }
+    if (!scopeIsAllowed(requestedScope)) {
+      throw new OAuthError("invalid_scope", `Only ${GOLF_SCOPE} is supported.`);
+    }
+    const request = {
+      kind: "authorization_request",
+      iat: nowSeconds(),
+      exp: nowSeconds() + AUTH_REQUEST_LIFETIME_SECONDS,
+      clientId,
+      redirectUri,
+      resource,
+      scope: GOLF_SCOPE,
+      state: stringValue(query.state) || void 0,
+      codeChallenge
+    };
+    return {
+      request,
+      requestToken: this.seal("authorization_request", request)
+    };
+  }
+  completeAuthorization(requestToken, credentials) {
+    const request = this.open(
+      "authorization_request",
+      requestToken
+    );
+    if (request.kind !== "authorization_request") {
+      throw new OAuthError("invalid_request", "Invalid authorization request.");
+    }
+    this.validateClientRedirect(request.clientId, request.redirectUri);
+    this.assertGiClientAllowed(credentials.clientId);
+    const subject = subjectFor(credentials.clientId);
+    const code = this.seal("authorization_code", {
+      kind: "authorization_code",
+      iat: nowSeconds(),
+      exp: nowSeconds() + AUTH_CODE_LIFETIME_SECONDS,
+      clientId: request.clientId,
+      redirectUri: request.redirectUri,
+      resource: request.resource,
+      scope: request.scope,
+      codeChallenge: request.codeChallenge,
+      credentials,
+      subject,
+      nonce: randomBytes(16).toString("base64url")
+    });
+    return { redirectUri: request.redirectUri, code, state: request.state };
+  }
+  exchangeToken(body, req) {
+    const grantType = stringValue(body.grant_type);
+    if (grantType === "authorization_code") {
+      return this.exchangeAuthorizationCode(body, req);
+    }
+    if (grantType === "refresh_token") {
+      return this.exchangeRefreshToken(body, req);
+    }
+    throw new OAuthError("unsupported_grant_type", "Unsupported grant_type.");
+  }
+  verifyAccessToken(token) {
+    const grant = this.open("access_token", token);
+    if (grant.kind !== "access_token" || grant.issuer !== this.config.issuer || grant.resource !== this.config.resource || !scopeIsAllowed(grant.scope)) {
+      throw new OAuthError("invalid_token", "The access token is invalid.", 401);
+    }
+    return grant;
+  }
+  exchangeAuthorizationCode(body, req) {
+    const codeValue = stringValue(body.code);
+    const clientId = stringValue(body.client_id) || basicClient(req)?.clientId || "";
+    const redirectUri = stringValue(body.redirect_uri);
+    const resource = stringValue(body.resource);
+    const verifier = stringValue(body.code_verifier);
+    if (!codeValue || !clientId || !redirectUri || !verifier) {
+      throw new OAuthError(
+        "invalid_request",
+        "code, client_id, redirect_uri, and code_verifier are required."
+      );
+    }
+    this.authenticateTokenClient(clientId, body, req);
+    const code = this.open("authorization_code", codeValue);
+    if (code.kind !== "authorization_code" || code.clientId !== clientId || code.redirectUri !== redirectUri || code.resource !== resource || !pkceMatches(verifier, code.codeChallenge)) {
+      throw new OAuthError("invalid_grant", "The authorization code is invalid.");
+    }
+    this.consumeAuthorizationCode(code.nonce, code.exp ?? 0);
+    return this.issueTokens(
+      clientId,
+      code.credentials,
+      code.subject,
+      code.scope,
+      code.resource
+    );
+  }
+  exchangeRefreshToken(body, req) {
+    const refreshToken = stringValue(body.refresh_token);
+    const clientId = stringValue(body.client_id) || basicClient(req)?.clientId || "";
+    const resource = stringValue(body.resource);
+    if (!refreshToken || !clientId) {
+      throw new OAuthError(
+        "invalid_request",
+        "refresh_token and client_id are required."
+      );
+    }
+    this.authenticateTokenClient(clientId, body, req);
+    const grant = this.open("refresh_token", refreshToken);
+    if (grant.kind !== "refresh_token" || grant.clientId !== clientId || grant.issuer !== this.config.issuer || grant.resource !== resource) {
+      throw new OAuthError("invalid_grant", "The refresh token is invalid.");
+    }
+    return this.issueTokens(
+      clientId,
+      grant.credentials,
+      grant.subject,
+      grant.scope,
+      grant.resource
+    );
+  }
+  issueTokens(clientId, credentials, subject, scope, resource) {
+    const issuedAt = nowSeconds();
+    const accessToken = this.seal("access_token", {
+      kind: "access_token",
+      iat: issuedAt,
+      exp: issuedAt + ACCESS_TOKEN_LIFETIME_SECONDS,
+      issuer: this.config.issuer,
+      resource,
+      scope,
+      credentials,
+      subject
+    });
+    const refreshToken = this.seal("refresh_token", {
+      kind: "refresh_token",
+      iat: issuedAt,
+      exp: issuedAt + REFRESH_TOKEN_LIFETIME_SECONDS,
+      clientId,
+      issuer: this.config.issuer,
+      resource,
+      scope,
+      credentials,
+      subject
+    });
+    return {
+      access_token: accessToken,
+      token_type: "Bearer",
+      expires_in: ACCESS_TOKEN_LIFETIME_SECONDS,
+      refresh_token: refreshToken,
+      scope
+    };
+  }
+  authenticateTokenClient(clientId, body, req) {
+    if (clientId === this.config.staticClientId) {
+      const expected = this.config.staticClientSecret;
+      if (!expected) return;
+      const supplied = basicClient(req, clientId)?.secret || stringValue(body.client_secret);
+      if (!supplied || !safeEqual(supplied, expected)) {
+        throw new OAuthError("invalid_client", "Client authentication failed.", 401);
+      }
+      return;
+    }
+    const dynamicClient = this.open("dynamic_client", clientId);
+    if (dynamicClient.kind !== "dynamic_client") {
+      throw new OAuthError("invalid_client", "Unknown OAuth client.", 401);
+    }
+  }
+  validateClientRedirect(clientId, redirectUri) {
+    if (clientId === this.config.staticClientId) {
+      if (!this.config.staticRedirectUris.includes(redirectUri)) {
+        throw new OAuthError("invalid_request", "redirect_uri is not allowlisted.");
+      }
+      return;
+    }
+    const client = this.open("dynamic_client", clientId);
+    if (client.kind !== "dynamic_client" || !client.redirectUris.includes(redirectUri)) {
+      throw new OAuthError("invalid_request", "redirect_uri is not registered.");
+    }
+  }
+  assertGiClientAllowed(clientId) {
+    const allowed = this.config.allowedGiClientIds;
+    if (allowed && !allowed.has(clientId)) {
+      throw new OAuthError(
+        "access_denied",
+        "This Golf Intelligence Client ID is not enabled for review.",
+        403
+      );
+    }
+  }
+  consumeAuthorizationCode(nonce, expiresAt) {
+    const now = nowSeconds();
+    for (const [key, expiry] of this.redeemedCodes) {
+      if (expiry <= now) this.redeemedCodes.delete(key);
+    }
+    if (this.redeemedCodes.has(nonce)) {
+      throw new OAuthError("invalid_grant", "The authorization code was already used.");
+    }
+    this.redeemedCodes.set(nonce, expiresAt);
+  }
+  seal(kind, value) {
+    const iv = randomBytes(12);
+    const cipher = createCipheriv("aes-256-gcm", this.key, iv);
+    cipher.setAAD(Buffer.from(kind));
+    const encrypted = Buffer.concat([
+      cipher.update(JSON.stringify(value), "utf8"),
+      cipher.final()
+    ]);
+    const tag = cipher.getAuthTag();
+    return `gi1.${iv.toString("base64url")}.${encrypted.toString("base64url")}.${tag.toString("base64url")}`;
+  }
+  open(kind, token) {
+    try {
+      const [version2, ivValue, encryptedValue, tagValue, extra] = token.split(".");
+      if (version2 !== "gi1" || !ivValue || !encryptedValue || !tagValue || extra) {
+        throw new Error("Malformed token");
+      }
+      const decipher = createDecipheriv(
+        "aes-256-gcm",
+        this.key,
+        Buffer.from(ivValue, "base64url")
+      );
+      decipher.setAAD(Buffer.from(kind));
+      decipher.setAuthTag(Buffer.from(tagValue, "base64url"));
+      const plaintext = Buffer.concat([
+        decipher.update(Buffer.from(encryptedValue, "base64url")),
+        decipher.final()
+      ]);
+      const payload = JSON.parse(plaintext.toString("utf8"));
+      if (payload.kind !== kind || typeof payload.iat !== "number" || payload.exp !== void 0 && payload.exp <= nowSeconds()) {
+        throw new Error("Expired or invalid token");
+      }
+      return payload;
+    } catch {
+      const errorName = kind === "access_token" ? "invalid_token" : "invalid_grant";
+      const status = kind === "access_token" ? 401 : 400;
+      throw new OAuthError(errorName, "The supplied token is invalid or expired.", status);
+    }
+  }
+};
+function nowSeconds() {
+  return Math.floor(Date.now() / 1e3);
+}
+function stringValue(value) {
+  return typeof value === "string" ? value.trim() : "";
+}
+function isRecord(value) {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+function isAllowedRedirectUri(value) {
+  try {
+    const url2 = new URL(value);
+    return url2.protocol === "https:" && Boolean(url2.hostname) || url2.protocol === "http:" && (url2.hostname === "127.0.0.1" || url2.hostname === "localhost");
+  } catch {
+    return false;
+  }
+}
+function scopeIsAllowed(scope) {
+  const scopes = scope.split(/\s+/).filter(Boolean);
+  return scopes.length === 1 && scopes[0] === GOLF_SCOPE;
+}
+function subjectFor(clientId) {
+  return createHash("sha256").update(`golf-intelligence:${clientId}`).digest("base64url");
+}
+function pkceMatches(verifier, expectedChallenge) {
+  if (!/^[A-Za-z0-9._~-]{43,128}$/.test(verifier)) return false;
+  const actual = createHash("sha256").update(verifier).digest("base64url");
+  return safeEqual(actual, expectedChallenge);
+}
+function safeEqual(actual, expected) {
+  const actualBuffer = Buffer.from(actual);
+  const expectedBuffer = Buffer.from(expected);
+  return actualBuffer.length === expectedBuffer.length && timingSafeEqual(actualBuffer, expectedBuffer);
+}
+function basicClient(req, expectedClientId) {
+  const authorization = req.get("authorization");
+  if (!authorization?.startsWith("Basic ")) return void 0;
+  try {
+    const decoded = Buffer.from(authorization.slice(6), "base64").toString("utf8");
+    const separator = decoded.indexOf(":");
+    if (separator < 0) return void 0;
+    const suppliedId = decodeURIComponent(decoded.slice(0, separator));
+    if (expectedClientId && suppliedId !== expectedClientId) return void 0;
+    return {
+      clientId: suppliedId,
+      secret: decodeURIComponent(decoded.slice(separator + 1))
+    };
+  } catch {
+    return void 0;
+  }
 }
 
 // src/http.ts
@@ -57672,14 +58138,90 @@ function credentialsFromHeaders(headers) {
 function createHttpApp(options = {}) {
   const env = options.env ?? process.env;
   const clientFactory = options.clientFactory ?? ((credentials) => new GolfIntelligenceClient(credentials));
-  const envClient = clientFactory({
-    clientId: env.GI_CLIENT_ID?.trim() ?? "",
-    activeToken: env.GI_ACTIVE_TOKEN?.trim() ?? ""
-  });
+  const oauth = options.oauthService ?? new OAuthService(env);
   const app = createMcpExpressApp({ host: "0.0.0.0" });
+  app.use(import_express3.default.urlencoded({ extended: false, limit: "32kb" }));
   app.get("/health", (_req, res) => {
     res.status(200).json({ status: "ok" });
   });
+  const metadata = (_req, res) => {
+    res.status(200).set("Cache-Control", "public, max-age=300").json(oauth.protectedResourceMetadata());
+  };
+  app.get("/.well-known/oauth-protected-resource", metadata);
+  app.get("/.well-known/oauth-protected-resource/mcp", metadata);
+  const authorizationMetadata = (_req, res) => {
+    res.status(200).set("Cache-Control", "public, max-age=300").json(oauth.authorizationServerMetadata());
+  };
+  app.get("/.well-known/oauth-authorization-server", authorizationMetadata);
+  app.get("/.well-known/oauth-authorization-server/mcp", authorizationMetadata);
+  app.post("/oauth/register", (req, res) => {
+    try {
+      res.status(201).set("Cache-Control", "no-store").json(oauth.registerClient(req.body));
+    } catch (error51) {
+      sendOAuthError(res, error51);
+    }
+  });
+  app.get("/oauth/authorize", (req, res) => {
+    try {
+      const { requestToken } = oauth.createAuthorizationRequest(
+        req.query
+      );
+      res.status(200).set("Cache-Control", "no-store").set("Pragma", "no-cache").set(
+        "Content-Security-Policy",
+        "default-src 'none'; style-src 'unsafe-inline'; form-action 'self'; frame-ancestors 'none'; base-uri 'none'"
+      ).type("html").send(authorizationPage(requestToken));
+    } catch (error51) {
+      sendAuthorizationError(res, error51);
+    }
+  });
+  app.post("/oauth/authorize", async (req, res) => {
+    try {
+      const requestToken = bodyString(req.body, "authorization_request");
+      const clientId = bodyString(req.body, "gi_client_id");
+      const activeToken = bodyString(req.body, "gi_active_token");
+      if (!requestToken || !clientId || !activeToken) {
+        throw new OAuthError(
+          "invalid_request",
+          "Client ID and Active Token are required."
+        );
+      }
+      const credentials = { clientId, activeToken };
+      try {
+        await clientFactory(credentials).authenticate();
+      } catch {
+        throw new OAuthError(
+          "access_denied",
+          "The Client ID or Active Token was not accepted.",
+          401
+        );
+      }
+      const result = oauth.completeAuthorization(requestToken, credentials);
+      const redirect2 = new URL(result.redirectUri);
+      redirect2.searchParams.set("code", result.code);
+      if (result.state) redirect2.searchParams.set("state", result.state);
+      res.status(302).set("Cache-Control", "no-store").redirect(redirect2.toString());
+    } catch (error51) {
+      sendAuthorizationError(res, error51);
+    }
+  });
+  app.post("/oauth/token", (req, res) => {
+    try {
+      res.status(200).set("Cache-Control", "no-store").set("Pragma", "no-cache").json(oauth.exchangeToken(bodyRecord(req.body), req));
+    } catch (error51) {
+      sendOAuthError(res, error51);
+    }
+  });
+  app.get(
+    "/.well-known/openai-apps-challenge",
+    (_req, res) => {
+      const token = env.OPENAI_APPS_CHALLENGE_TOKEN?.trim() || env.OPENAI_APPS_CHALLENGE?.trim();
+      if (!token) {
+        res.status(404).end();
+        return;
+      }
+      res.status(200).type("text/plain").send(token);
+    }
+  );
   app.post("/mcp", async (req, res) => {
     let server;
     let transport;
@@ -57691,7 +58233,21 @@ function createHttpApp(options = {}) {
     };
     try {
       const requestCredentials = credentialsFromHeaders(req.headers);
-      const client = requestCredentials ? clientFactory(requestCredentials) : envClient;
+      const bearerToken = bearerTokenFromHeaders(req.headers);
+      if (requestCredentials && bearerToken) {
+        throw new CredentialHeaderError(
+          "Use either OAuth bearer authentication or GI credential headers, not both."
+        );
+      }
+      let credentials = requestCredentials;
+      if (bearerToken) {
+        credentials = oauth.verifyAccessToken(bearerToken).credentials;
+      }
+      if (!credentials) {
+        sendMcpUnauthorized(res, oauth);
+        return;
+      }
+      const client = clientFactory(credentials);
       server = createServer(client);
       transport = new StreamableHTTPServerTransport({
         sessionIdGenerator: void 0
@@ -57703,6 +58259,10 @@ function createHttpApp(options = {}) {
       await cleanup();
       if (!res.headersSent) {
         const badCredentials = error51 instanceof CredentialHeaderError;
+        if (error51 instanceof OAuthError && error51.status === 401) {
+          sendMcpUnauthorized(res, oauth, error51.message);
+          return;
+        }
         res.status(badCredentials ? 400 : 500).json({
           jsonrpc: "2.0",
           error: {
@@ -57724,6 +58284,97 @@ function createHttpApp(options = {}) {
   app.get("/mcp", methodNotAllowed);
   app.delete("/mcp", methodNotAllowed);
   return app;
+}
+function bearerTokenFromHeaders(headers) {
+  const value = headerValue(headers, "authorization");
+  if (!value) return void 0;
+  const match = /^Bearer ([^\s]+)$/i.exec(value);
+  if (!match) {
+    throw new CredentialHeaderError(
+      "Authorization must contain exactly one Bearer token."
+    );
+  }
+  return match[1];
+}
+function bodyRecord(value) {
+  return typeof value === "object" && value !== null && !Array.isArray(value) ? value : {};
+}
+function bodyString(value, name) {
+  const field = bodyRecord(value)[name];
+  return typeof field === "string" ? field.trim() : "";
+}
+function sendMcpUnauthorized(res, oauth, detail = "OAuth authentication is required.") {
+  const metadataUrl = `${oauth.config.issuer}/.well-known/oauth-protected-resource/mcp`;
+  const challenge = `Bearer resource_metadata="${metadataUrl}", scope="golf:read", error="invalid_token", error_description="${detail.replaceAll('"', "'")}"`;
+  res.status(401).set("WWW-Authenticate", challenge).json({
+    jsonrpc: "2.0",
+    error: { code: -32001, message: detail },
+    id: null
+  });
+}
+function sendOAuthError(res, error51) {
+  const oauthError = error51 instanceof OAuthError ? error51 : new OAuthError("server_error", "OAuth request failed.", 500);
+  res.status(oauthError.status).set("Cache-Control", "no-store").set("Pragma", "no-cache").json({
+    error: oauthError.error,
+    error_description: oauthError.message
+  });
+}
+function sendAuthorizationError(res, error51) {
+  const oauthError = error51 instanceof OAuthError ? error51 : new OAuthError("server_error", "Authorization failed.", 500);
+  res.status(oauthError.status).set("Cache-Control", "no-store").set(
+    "Content-Security-Policy",
+    "default-src 'none'; style-src 'unsafe-inline'; frame-ancestors 'none'; base-uri 'none'"
+  ).type("html").send(errorPage(oauthError.message));
+}
+function authorizationPage(requestToken) {
+  return `<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Connect Golf Intelligence</title>
+  <style>
+    body{font:16px system-ui,sans-serif;max-width:34rem;margin:4rem auto;padding:0 1rem;color:#17201b}
+    label{display:block;font-weight:600;margin-top:1rem}input{box-sizing:border-box;width:100%;padding:.7rem;margin-top:.35rem}
+    button{margin-top:1.5rem;padding:.75rem 1rem;background:#176b43;color:white;border:0;border-radius:.25rem}
+    p{line-height:1.5}.note{color:#526057;font-size:.9rem}
+  </style>
+</head>
+<body>
+  <main>
+    <h1>Connect Golf Intelligence</h1>
+    <p>Sign in with the Client ID and Active Token from your Golf Intelligence API Account. Calls made through ChatGPT use that account and its credits.</p>
+    <form method="post" action="/oauth/authorize">
+      <input type="hidden" name="authorization_request" value="${escapeHtml(requestToken)}">
+      <label for="gi_client_id">Client ID</label>
+      <input id="gi_client_id" name="gi_client_id" required autocomplete="username">
+      <label for="gi_active_token">Active Token</label>
+      <input id="gi_active_token" name="gi_active_token" type="password" required autocomplete="current-password">
+      <button type="submit">Authorize ChatGPT</button>
+    </form>
+    <p class="note">Your credentials are validated with Golf Intelligence and bound to encrypted OAuth tokens. They are not logged.</p>
+  </main>
+</body>
+</html>`;
+}
+function errorPage(message) {
+  return `<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Golf Intelligence authorization error</title>
+<style>body{font:16px system-ui,sans-serif;max-width:34rem;margin:4rem auto;padding:0 1rem;color:#17201b}</style>
+</head><body><main><h1>Authorization failed</h1><p>${escapeHtml(message)}</p></main></body></html>`;
+}
+function escapeHtml(value) {
+  return value.replace(
+    /[&<>"']/g,
+    (character) => ({
+      "&": "&amp;",
+      "<": "&lt;",
+      ">": "&gt;",
+      '"': "&quot;",
+      "'": "&#39;"
+    })[character]
+  );
 }
 function configuredPort() {
   const value = process.env.PORT?.trim() || "3000";

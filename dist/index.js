@@ -31287,6 +31287,9 @@ var GolfIntelligenceClient = class {
   fetchImpl;
   accessToken;
   accessTokenExpiresAt = 0;
+  async authenticate() {
+    await this.getAccessToken();
+  }
   async request(method, path, options = {}) {
     const url2 = new URL(path, API_BASE_URL);
     for (const [key, value] of Object.entries(options.query ?? {})) {
@@ -31389,6 +31392,17 @@ var READ_ONLY_LOOKUP_ANNOTATIONS = {
   destructiveHint: false,
   idempotentHint: true
 };
+var PAID_READ_ONLY_LOOKUP_ANNOTATIONS = {
+  ...READ_ONLY_LOOKUP_ANNOTATIONS,
+  // A repeated paid GI API invocation can consume credits again.
+  idempotentHint: false
+};
+var OAUTH_SECURITY = [{ type: "oauth2", scopes: ["golf:read"] }];
+var OAUTH_SECURITY_CONFIG = {
+  securitySchemes: OAUTH_SECURITY,
+  // Backward-compatible mirror used by existing OpenAI Apps clients.
+  _meta: { securitySchemes: OAUTH_SECURITY }
+};
 function toolResult(value) {
   return {
     content: [
@@ -31414,7 +31428,8 @@ function createServer(client = api) {
         rows: external_exports.number().int().positive().optional().describe("Maximum number of results"),
         offset: external_exports.number().int().nonnegative().optional().describe("Result offset for pagination")
       },
-      annotations: READ_ONLY_LOOKUP_ANNOTATIONS
+      annotations: READ_ONLY_LOOKUP_ANNOTATIONS,
+      ...OAUTH_SECURITY_CONFIG
     },
     async ({ keywords, rows, offset }) => toolResult(
       await client.request("POST", "/courses/searchCourseGroups", {
@@ -31435,7 +31450,8 @@ function createServer(client = api) {
         PublicId: external_exports.string().min(1).describe("Course group PublicId from search"),
         confirm_spend: external_exports.boolean().describe("Must be true to authorize spending 1 credit")
       },
-      annotations: READ_ONLY_LOOKUP_ANNOTATIONS
+      annotations: PAID_READ_ONLY_LOOKUP_ANNOTATIONS,
+      ...OAUTH_SECURITY_CONFIG
     },
     async ({ PublicId, confirm_spend }) => {
       requireSpendConfirmation(
@@ -31459,7 +31475,8 @@ function createServer(client = api) {
         PublicId: external_exports.string().min(1).describe("Course group PublicId from search"),
         confirm_spend: external_exports.boolean().describe("Must be true to authorize spending 2 credits")
       },
-      annotations: READ_ONLY_LOOKUP_ANNOTATIONS
+      annotations: PAID_READ_ONLY_LOOKUP_ANNOTATIONS,
+      ...OAUTH_SECURITY_CONFIG
     },
     async ({ PublicId, confirm_spend }) => {
       requireSpendConfirmation(confirm_spend, 2, "get_course_group_gps");
@@ -31479,7 +31496,8 @@ function createServer(client = api) {
         PublicId: external_exports.string().min(1).describe("Course group PublicId from search"),
         confirm_spend: external_exports.boolean().describe("Must be true to authorize spending 3 credits")
       },
-      annotations: READ_ONLY_LOOKUP_ANNOTATIONS
+      annotations: PAID_READ_ONLY_LOOKUP_ANNOTATIONS,
+      ...OAUTH_SECURITY_CONFIG
     },
     async ({ PublicId, confirm_spend }) => {
       requireSpendConfirmation(confirm_spend, 3, "get_course_group_detail");
@@ -31500,7 +31518,8 @@ function createServer(client = api) {
         imageSizeType: external_exports.enum(["Portrait", "Square"]).describe("Requested image shape"),
         confirm_spend: external_exports.boolean().describe("Must be true to authorize spending 1 credit")
       },
-      annotations: READ_ONLY_LOOKUP_ANNOTATIONS
+      annotations: PAID_READ_ONLY_LOOKUP_ANNOTATIONS,
+      ...OAUTH_SECURITY_CONFIG
     },
     async ({ holeId, imageSizeType, confirm_spend }) => {
       requireSpendConfirmation(confirm_spend, 1, "get_green_slope_image");
