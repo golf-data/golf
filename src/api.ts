@@ -17,6 +17,10 @@ export class GolfIntelligenceClient {
     private readonly fetchImpl: Fetch = globalThis.fetch,
   ) {}
 
+  async authenticate(): Promise<void> {
+    await this.getAccessToken();
+  }
+
   async request(
     method: "GET" | "POST",
     path: string,

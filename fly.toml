@@ -6,6 +6,11 @@ primary_region = "ord"
 
 [env]
   PORT = "3000"
+  OAUTH_STATE_FILE = "/data/oauth-state.json"
+
+[mounts]
+  source = "oauth_state"
+  destination = "/data"
 
 [http_service]
   internal_port = 3000

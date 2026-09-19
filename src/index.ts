@@ -17,6 +17,19 @@ const READ_ONLY_LOOKUP_ANNOTATIONS = {
   idempotentHint: true,
 } as const;
 
+const PAID_READ_ONLY_LOOKUP_ANNOTATIONS = {
+  ...READ_ONLY_LOOKUP_ANNOTATIONS,
+  // A repeated paid GI API invocation can consume credits again.
+  idempotentHint: false,
+} as const;
+
+const OAUTH_SECURITY = [{ type: "oauth2" as const, scopes: ["golf:read"] }];
+const OAUTH_SECURITY_CONFIG = {
+  securitySchemes: OAUTH_SECURITY,
+  // Backward-compatible mirror used by existing OpenAI Apps clients.
+  _meta: { securitySchemes: OAUTH_SECURITY },
+};
+
 function toolResult(value: unknown) {
   return {
     content: [
@@ -59,6 +72,7 @@ export function createServer(client: GolfIntelligenceClient = api): McpServer {
           .describe("Result offset for pagination"),
       },
       annotations: READ_ONLY_LOOKUP_ANNOTATIONS,
+      ...OAUTH_SECURITY_CONFIG,
     },
     async ({ keywords, rows, offset }) =>
       toolResult(
@@ -84,7 +98,8 @@ export function createServer(client: GolfIntelligenceClient = api): McpServer {
           .boolean()
           .describe("Must be true to authorize spending 1 credit"),
       },
-      annotations: READ_ONLY_LOOKUP_ANNOTATIONS,
+      annotations: PAID_READ_ONLY_LOOKUP_ANNOTATIONS,
+      ...OAUTH_SECURITY_CONFIG,
     },
     async ({ PublicId, confirm_spend }) => {
       requireSpendConfirmation(
@@ -112,7 +127,8 @@ export function createServer(client: GolfIntelligenceClient = api): McpServer {
           .boolean()
           .describe("Must be true to authorize spending 2 credits"),
       },
-      annotations: READ_ONLY_LOOKUP_ANNOTATIONS,
+      annotations: PAID_READ_ONLY_LOOKUP_ANNOTATIONS,
+      ...OAUTH_SECURITY_CONFIG,
     },
     async ({ PublicId, confirm_spend }) => {
       requireSpendConfirmation(confirm_spend, 2, "get_course_group_gps");
@@ -136,7 +152,8 @@ export function createServer(client: GolfIntelligenceClient = api): McpServer {
           .boolean()
           .describe("Must be true to authorize spending 3 credits"),
       },
-      annotations: READ_ONLY_LOOKUP_ANNOTATIONS,
+      annotations: PAID_READ_ONLY_LOOKUP_ANNOTATIONS,
+      ...OAUTH_SECURITY_CONFIG,
     },
     async ({ PublicId, confirm_spend }) => {
       requireSpendConfirmation(confirm_spend, 3, "get_course_group_detail");
@@ -163,7 +180,8 @@ export function createServer(client: GolfIntelligenceClient = api): McpServer {
           .boolean()
           .describe("Must be true to authorize spending 1 credit"),
       },
-      annotations: READ_ONLY_LOOKUP_ANNOTATIONS,
+      annotations: PAID_READ_ONLY_LOOKUP_ANNOTATIONS,
+      ...OAUTH_SECURITY_CONFIG,
     },
     async ({ holeId, imageSizeType, confirm_spend }) => {
       requireSpendConfirmation(confirm_spend, 1, "get_green_slope_image");

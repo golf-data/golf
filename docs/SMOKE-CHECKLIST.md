@@ -21,7 +21,29 @@ curl -sS -D - https://mcp.golfintelligence.com/.well-known/openai-apps-challenge
 Expect HTTP 200 and `Content-Type: text/plain` with the Fly secret
 `OPENAI_APPS_CHALLENGE_TOKEN` as the body. HTTP 404 means the secret is unset.
 
-## 2. `initialize` over Streamable HTTP
+## 2. OAuth discovery and anonymous denial
+
+```bash
+curl -fsS https://mcp.golfintelligence.com/.well-known/oauth-protected-resource/mcp
+curl -fsS https://mcp.golfintelligence.com/.well-known/oauth-authorization-server
+```
+
+Expect valid JSON with resource
+`https://mcp.golfintelligence.com/mcp`, authorization endpoint
+`/oauth/authorize`, token endpoint `/oauth/token`, and S256 PKCE support.
+
+An anonymous tool request must return HTTP 401 with a
+`WWW-Authenticate` protected-resource challenge, even if global GI environment
+credentials exist in Fly:
+
+```bash
+curl -i https://mcp.golfintelligence.com/mcp \
+  -H 'Content-Type: application/json' \
+  -H 'Accept: application/json, text/event-stream' \
+  -d '{"jsonrpc":"2.0","id":1,"method":"tools/call","params":{"name":"get_course_group_detail","arguments":{"PublicId":"example","confirm_spend":true}}}'
+```
+
+## 3. `initialize` over Streamable HTTP
 
 ```bash
 curl -sS https://mcp.golfintelligence.com/mcp \
@@ -46,7 +68,7 @@ capability. `serverInfo.version` must match the version in `package.json`; an
 older version means the deployment is stale and is still serving retired tool
 descriptions.
 
-## 3. `tools/list` returns all five tools
+## 4. `tools/list` returns all five tools
 
 ```bash
 curl -sS https://mcp.golfintelligence.com/mcp \
@@ -75,13 +97,15 @@ curl -sS https://mcp.golfintelligence.com/mcp \
   | grep -Eio 'laser|drone|airplane|satellite'
 ```
 
-## 4. Free search works end to end
+## 5. OAuth tool sequence works end to end
 
-Call `search_course_groups` with `{"keywords":"St Andrews"}` and confirm
-results come back with no credit charge. Paid tools must refuse without
-`confirm_spend=true`.
+Complete the ChatGPT OAuth sign-in using a dedicated review API Account. Call
+`search_course_groups` with `{"keywords":"St Andrews"}` and confirm results
+come back with no credit charge. Then call scorecard, GPS, detail, and green
+slope image, setting `confirm_spend=true` only after explicitly confirming each
+stated cost. Paid tools must refuse without that flag.
 
-## 5. Cursor marketplace install
+## 6. Cursor marketplace install
 
 1. Remove any previously installed `golf` plugin, then reinstall it from the
    marketplace so the cached clone is replaced.
@@ -91,7 +115,7 @@ results come back with no credit charge. Paid tools must refuse without
    five tools appear. A load error mentioning `${PLUGIN_ROOT}` means the old
    cached stdio clone is still in place.
 
-## 6. Local stdio fallback (optional)
+## 7. Local stdio fallback (optional)
 
 ```bash
 npm run build

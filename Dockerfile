@@ -11,8 +11,8 @@ FROM node:22-alpine AS runtime
 
 ENV NODE_ENV=production
 WORKDIR /app
-USER node
+RUN apk add --no-cache su-exec && mkdir -p /data
 COPY --from=build --chown=node:node /app/dist ./dist
 
 EXPOSE 3000
-CMD ["node", "dist/http.js"]
+CMD ["sh", "-c", "chown node:node /data && exec su-exec node node dist/http.js"]
