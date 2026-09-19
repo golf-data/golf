@@ -5,6 +5,14 @@ import {
   randomBytes,
   timingSafeEqual,
 } from "node:crypto";
+import {
+  existsSync,
+  mkdirSync,
+  readFileSync,
+  renameSync,
+  writeFileSync,
+} from "node:fs";
+import { dirname } from "node:path";
 import type { Request } from "express";
 import type { Credentials } from "./api.js";
 
@@ -57,6 +65,7 @@ export type AccessGrant = TimedPayload & {
   scope: string;
   credentials: Credentials;
   subject: string;
+  family: string;
 };
 
 type RefreshGrant = TimedPayload & {
@@ -67,6 +76,8 @@ type RefreshGrant = TimedPayload & {
   scope: string;
   credentials: Credentials;
   subject: string;
+  family: string;
+  nonce: string;
 };
 
 type DynamicClient = TimedPayload & {
@@ -131,10 +142,17 @@ function csv(value: string | undefined): string[] {
 export class OAuthService {
   readonly config: OAuthConfig;
   private readonly key: Buffer;
+  private readonly stateFile?: string;
   private readonly redeemedCodes = new Map<string, number>();
+  private readonly refreshFamilies = new Map<
+    string,
+    { currentNonce: string; expiresAt: number }
+  >();
+  private readonly revokedRefreshFamilies = new Map<string, number>();
 
   constructor(env: NodeJS.ProcessEnv) {
     this.key = requiredEncryptionKey(env);
+    this.stateFile = env.OAUTH_STATE_FILE?.trim() || undefined;
     const issuer = normalizedOrigin(
       env.OAUTH_ISSUER?.trim() || "https://mcp.golfintelligence.com",
     );
@@ -143,6 +161,11 @@ export class OAuthService {
     if (staticClientId && staticRedirectUris.length === 0) {
       throw new Error(
         "OAUTH_REDIRECT_URIS is required when OAUTH_CLIENT_ID is set.",
+      );
+    }
+    if (staticRedirectUris.some((uri) => !isAllowedStaticRedirectUri(uri))) {
+      throw new Error(
+        "OAUTH_REDIRECT_URIS entries must use HTTPS (or HTTP loopback for local testing).",
       );
     }
     this.config = {
@@ -158,6 +181,7 @@ export class OAuthService {
           ? new Set(csv(env.OAUTH_ALLOWED_GI_CLIENT_IDS))
           : undefined,
     };
+    this.loadState();
   }
 
   protectedResourceMetadata() {
@@ -197,12 +221,12 @@ export class OAuthService {
       redirectUris.length === 0 ||
       redirectUris.some(
         (value) =>
-          typeof value !== "string" || !isAllowedRedirectUri(value),
+          typeof value !== "string" || !isAllowedDynamicRedirectUri(value),
       )
     ) {
       throw new OAuthError(
         "invalid_redirect_uri",
-        "Every redirect URI must be an absolute HTTPS URL.",
+        "Dynamic registration is limited to ChatGPT callback URLs.",
       );
     }
     if (
@@ -336,7 +360,36 @@ export class OAuthService {
     ) {
       throw new OAuthError("invalid_token", "The access token is invalid.", 401);
     }
+    if (this.revokedRefreshFamilies.has(grant.family)) {
+      throw new OAuthError(
+        "invalid_token",
+        "The OAuth grant was revoked. Reconnect the account.",
+        401,
+      );
+    }
+    this.assertCredentialsAllowed(grant.credentials);
     return grant;
+  }
+
+  assertCredentialsAllowed(credentials: Credentials): void {
+    this.assertGiClientAllowed(credentials.clientId);
+  }
+
+  authorizationErrorRedirect(
+    requestToken: string,
+    error: OAuthError,
+  ): string {
+    const request = this.open<AuthorizationRequest>(
+      "authorization_request",
+      requestToken,
+    );
+    this.validateClientRedirect(request.clientId, request.redirectUri);
+    const redirect = new URL(request.redirectUri);
+    redirect.searchParams.set("error", error.error);
+    redirect.searchParams.set("error_description", error.message);
+    if (request.state) redirect.searchParams.set("state", request.state);
+    redirect.searchParams.set("iss", this.config.issuer);
+    return redirect.toString();
   }
 
   private exchangeAuthorizationCode(
@@ -395,12 +448,15 @@ export class OAuthService {
     ) {
       throw new OAuthError("invalid_grant", "The refresh token is invalid.");
     }
+    this.assertCredentialsAllowed(grant.credentials);
+    this.rotateRefreshFamily(grant);
     return this.issueTokens(
       clientId,
       grant.credentials,
       grant.subject,
       grant.scope,
       grant.resource,
+      grant.family,
     );
   }
 
@@ -410,8 +466,15 @@ export class OAuthService {
     subject: string,
     scope: string,
     resource: string,
+    refreshFamily = randomBytes(16).toString("base64url"),
   ) {
     const issuedAt = nowSeconds();
+    const refreshNonce = randomBytes(16).toString("base64url");
+    const refreshExpiry = issuedAt + REFRESH_TOKEN_LIFETIME_SECONDS;
+    this.refreshFamilies.set(refreshFamily, {
+      currentNonce: refreshNonce,
+      expiresAt: refreshExpiry,
+    });
     const accessToken = this.seal("access_token", {
       kind: "access_token",
       iat: issuedAt,
@@ -421,6 +484,7 @@ export class OAuthService {
       scope,
       credentials,
       subject,
+      family: refreshFamily,
     } satisfies AccessGrant);
     const refreshToken = this.seal("refresh_token", {
       kind: "refresh_token",
@@ -432,7 +496,10 @@ export class OAuthService {
       scope,
       credentials,
       subject,
+      family: refreshFamily,
+      nonce: refreshNonce,
     } satisfies RefreshGrant);
+    this.persistState();
     return {
       access_token: accessToken,
       token_type: "Bearer",
@@ -490,6 +557,40 @@ export class OAuthService {
     }
   }
 
+  private rotateRefreshFamily(grant: RefreshGrant): void {
+    const now = nowSeconds();
+    for (const [family, state] of this.refreshFamilies) {
+      if (state.expiresAt <= now) this.refreshFamilies.delete(family);
+    }
+    for (const [family, expiry] of this.revokedRefreshFamilies) {
+      if (expiry <= now) this.revokedRefreshFamilies.delete(family);
+    }
+    if (this.revokedRefreshFamilies.has(grant.family)) {
+      throw new OAuthError(
+        "invalid_grant",
+        "This refresh token family was revoked. Reconnect the account.",
+      );
+    }
+    const state = this.refreshFamilies.get(grant.family);
+    if (state && state.currentNonce !== grant.nonce) {
+      this.refreshFamilies.delete(grant.family);
+      this.revokedRefreshFamilies.set(grant.family, grant.exp ?? now);
+      this.persistState();
+      throw new OAuthError(
+        "invalid_grant",
+        "Refresh token reuse was detected. Reconnect the account.",
+      );
+    }
+    // On a process restart, accept the still-valid encrypted token once and
+    // establish its family state before rotating it.
+    if (!state) {
+      this.refreshFamilies.set(grant.family, {
+        currentNonce: grant.nonce,
+        expiresAt: grant.exp ?? now,
+      });
+    }
+  }
+
   private consumeAuthorizationCode(nonce: string, expiresAt: number): void {
     const now = nowSeconds();
     for (const [key, expiry] of this.redeemedCodes) {
@@ -499,6 +600,52 @@ export class OAuthService {
       throw new OAuthError("invalid_grant", "The authorization code was already used.");
     }
     this.redeemedCodes.set(nonce, expiresAt);
+    this.persistState();
+  }
+
+  private loadState(): void {
+    if (!this.stateFile || !existsSync(this.stateFile)) return;
+    try {
+      const parsed = JSON.parse(readFileSync(this.stateFile, "utf8")) as {
+        redeemedCodes?: Array<[string, number]>;
+        refreshFamilies?: Array<
+          [string, { currentNonce: string; expiresAt: number }]
+        >;
+        revokedRefreshFamilies?: Array<[string, number]>;
+      };
+      for (const [nonce, expiry] of parsed.redeemedCodes ?? []) {
+        this.redeemedCodes.set(nonce, expiry);
+      }
+      for (const [family, state] of parsed.refreshFamilies ?? []) {
+        this.refreshFamilies.set(family, state);
+      }
+      for (const [family, expiry] of parsed.revokedRefreshFamilies ?? []) {
+        this.revokedRefreshFamilies.set(family, expiry);
+      }
+    } catch {
+      throw new Error(
+        `OAuth state file ${this.stateFile} is unreadable or invalid; refusing to start.`,
+      );
+    }
+  }
+
+  private persistState(): void {
+    if (!this.stateFile) return;
+    const directory = dirname(this.stateFile);
+    mkdirSync(directory, { recursive: true, mode: 0o700 });
+    const temporary =
+      `${this.stateFile}.${process.pid}.` +
+      `${randomBytes(6).toString("hex")}.tmp`;
+    writeFileSync(
+      temporary,
+      JSON.stringify({
+        redeemedCodes: [...this.redeemedCodes],
+        refreshFamilies: [...this.refreshFamilies],
+        revokedRefreshFamilies: [...this.revokedRefreshFamilies],
+      }),
+      { encoding: "utf8", mode: 0o600 },
+    );
+    renameSync(temporary, this.stateFile);
   }
 
   private seal(kind: TokenKind, value: object): string {
@@ -559,7 +706,19 @@ function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value);
 }
 
-function isAllowedRedirectUri(value: string): boolean {
+function isAllowedDynamicRedirectUri(value: string): boolean {
+  try {
+    const url = new URL(value);
+    return url.protocol === "https:" && url.hostname === "chatgpt.com" && (
+      url.pathname.startsWith("/connector/oauth/") ||
+      url.pathname === "/connector_platform_oauth_redirect"
+    );
+  } catch {
+    return false;
+  }
+}
+
+function isAllowedStaticRedirectUri(value: string): boolean {
   try {
     const url = new URL(value);
     return (

@@ -17834,15 +17834,19 @@ var require_utils2 = __commonJS({
       if (!obj || typeof obj !== "object") {
         return false;
       }
-      return !!(obj.constructor && obj.constructor.isBuffer && obj.constructor.isBuffer(obj));
+      return !!(obj.constructor && typeof obj.constructor.isBuffer === "function" && obj.constructor.isBuffer(obj));
     };
     var combine = function combine2(a, b, arrayLimit, plainObjects, throwOnLimitExceeded) {
       if (isOverflow(a)) {
         if (throwOnLimitExceeded) {
           throw new RangeError("Array limit exceeded. Only " + arrayLimit + " element" + (arrayLimit === 1 ? "" : "s") + " allowed in an array.");
         }
-        var newIndex = getMaxIndex(a) + 1;
-        a[newIndex] = b;
+        var bValues = isArray(b) ? b : [b];
+        var newIndex = getMaxIndex(a);
+        for (var i = 0; i < bValues.length; ++i) {
+          newIndex += 1;
+          a[newIndex] = bValues[i];
+        }
         setMaxIndex(a, newIndex);
         return a;
       }
@@ -17918,6 +17922,7 @@ var require_stringify = __commonJS({
       charsetSentinel: false,
       commaRoundTrip: false,
       delimiter: "&",
+      depth: Infinity,
       encode: true,
       encodeDotInKeys: false,
       encoder: utils.encode,
@@ -17937,8 +17942,11 @@ var require_stringify = __commonJS({
       return typeof v === "string" || typeof v === "number" || typeof v === "boolean" || typeof v === "symbol" || typeof v === "bigint";
     };
     var sentinel = {};
-    var stringify = function stringify2(object3, prefix, generateArrayPrefix, commaRoundTrip, allowEmptyArrays, strictNullHandling, skipNulls, encodeDotInKeys, encoder, filter, sort, allowDots, serializeDate, format, formatter, encodeValuesOnly, charset, sideChannel) {
+    var stringify = function stringify2(object3, prefix, generateArrayPrefix, commaRoundTrip, allowEmptyArrays, strictNullHandling, skipNulls, encodeDotInKeys, encoder, filter, sort, allowDots, serializeDate, format, formatter, encodeValuesOnly, charset, sideChannel, depth, currentDepth) {
       var obj = object3;
+      if (currentDepth > depth) {
+        throw new RangeError("Input depth exceeded depth option of " + depth);
+      }
       var tmpSc = sideChannel;
       var step = 0;
       var findFlag = false;
@@ -17956,9 +17964,8 @@ var require_stringify = __commonJS({
           step = 0;
         }
       }
-      if (typeof filter === "function") {
-        obj = filter(prefix, obj);
-      } else if (obj instanceof Date) {
+      obj = typeof filter === "function" ? filter(prefix, obj) : obj;
+      if (obj instanceof Date) {
         obj = serializeDate(obj);
       } else if (generateArrayPrefix === "comma" && isArray(obj)) {
         obj = utils.maybeMap(obj, function(value2) {
@@ -18001,7 +18008,7 @@ var require_stringify = __commonJS({
       }
       var encodedPrefix = encodeDotInKeys ? String(prefix).replace(/\./g, "%2E") : String(prefix);
       var adjustedPrefix = commaRoundTrip && isArray(obj) && obj.length === 1 ? encodedPrefix + "[]" : encodedPrefix;
-      if (allowEmptyArrays && isArray(obj) && obj.length === 0) {
+      if (allowEmptyArrays && isArray(obj) && obj.length === 0 && Object.keys(obj).length === 0) {
         return adjustedPrefix + "[]";
       }
       for (var j = 0; j < objKeys.length; ++j) {
@@ -18033,7 +18040,9 @@ var require_stringify = __commonJS({
           formatter,
           encodeValuesOnly,
           charset,
-          valueSideChannel
+          valueSideChannel,
+          depth,
+          currentDepth + 1
         ));
       }
       return values;
@@ -18088,6 +18097,7 @@ var require_stringify = __commonJS({
         charsetSentinel: typeof opts.charsetSentinel === "boolean" ? opts.charsetSentinel : defaults.charsetSentinel,
         commaRoundTrip: !!opts.commaRoundTrip,
         delimiter: typeof opts.delimiter === "undefined" ? defaults.delimiter : opts.delimiter,
+        depth: typeof opts.depth === "number" ? opts.depth : defaults.depth,
         encode: typeof opts.encode === "boolean" ? opts.encode : defaults.encode,
         encodeDotInKeys: typeof opts.encodeDotInKeys === "boolean" ? opts.encodeDotInKeys : defaults.encodeDotInKeys,
         encoder: typeof opts.encoder === "function" ? opts.encoder : defaults.encoder,
@@ -18135,9 +18145,10 @@ var require_stringify = __commonJS({
         if (options.skipNulls && value === null) {
           continue;
         }
+        var encodedKey = options.encodeDotInKeys ? String(key).replace(/\./g, "%2E") : String(key);
         pushToArray(keys, stringify(
           value,
-          key,
+          encodedKey,
           generateArrayPrefix,
           commaRoundTrip,
           options.allowEmptyArrays,
@@ -18153,7 +18164,9 @@ var require_stringify = __commonJS({
           options.formatter,
           options.encodeValuesOnly,
           options.charset,
-          sideChannel
+          sideChannel,
+          options.depth,
+          0
         ));
       }
       var joined = keys.join(options.delimiter);
@@ -18206,9 +18219,9 @@ var require_parse = __commonJS({
         return String.fromCharCode(parseInt(numberStr, 10));
       });
     };
-    var parseArrayValue = function(val, options, currentArrayLength, isFlatArrayValue) {
+    var parseArrayValue = function(val, options, currentArrayLength) {
       if (val && typeof val === "string" && options.comma && val.indexOf(",") > -1) {
-        if (isFlatArrayValue && options.throwOnLimitExceeded) {
+        if (options.throwOnLimitExceeded) {
           var commaCount = 0;
           var commaIndex = val.indexOf(",");
           while (commaIndex > -1) {
@@ -18275,8 +18288,7 @@ var require_parse = __commonJS({
               parseArrayValue(
                 part.slice(pos + 1),
                 options,
-                isArray(obj[key]) ? obj[key].length : 0,
-                part.indexOf("[]=") === -1
+                isArray(obj[key]) ? obj[key].length : 0
               ),
               function(encodedVal) {
                 return options.decoder(encodedVal, defaults.decoder, charset, "value");
@@ -18918,7 +18930,7 @@ var require_view = __commonJS({
     var debug = require_src()("express:view");
     var path = __require("node:path");
     var fs = __require("node:fs");
-    var dirname = path.dirname;
+    var dirname2 = path.dirname;
     var basename = path.basename;
     var extname = path.extname;
     var join = path.join;
@@ -18957,7 +18969,7 @@ var require_view = __commonJS({
       for (var i = 0; i < roots.length && !path2; i++) {
         var root = roots[i];
         var loc = resolve(root, name);
-        var dir = dirname(loc);
+        var dir = dirname2(loc);
         var file2 = basename(loc);
         path2 = this.resolve(dir, file2);
       }
@@ -57672,6 +57684,14 @@ import {
   randomBytes,
   timingSafeEqual
 } from "node:crypto";
+import {
+  existsSync,
+  mkdirSync,
+  readFileSync,
+  renameSync,
+  writeFileSync
+} from "node:fs";
+import { dirname } from "node:path";
 var GOLF_SCOPE = "golf:read";
 var RESOURCE_PATH = "/mcp";
 var AUTH_REQUEST_LIFETIME_SECONDS = 10 * 60;
@@ -57718,9 +57738,13 @@ function csv(value) {
 var OAuthService = class {
   config;
   key;
+  stateFile;
   redeemedCodes = /* @__PURE__ */ new Map();
+  refreshFamilies = /* @__PURE__ */ new Map();
+  revokedRefreshFamilies = /* @__PURE__ */ new Map();
   constructor(env) {
     this.key = requiredEncryptionKey(env);
+    this.stateFile = env.OAUTH_STATE_FILE?.trim() || void 0;
     const issuer = normalizedOrigin(
       env.OAUTH_ISSUER?.trim() || "https://mcp.golfintelligence.com"
     );
@@ -57729,6 +57753,11 @@ var OAuthService = class {
     if (staticClientId && staticRedirectUris.length === 0) {
       throw new Error(
         "OAUTH_REDIRECT_URIS is required when OAUTH_CLIENT_ID is set."
+      );
+    }
+    if (staticRedirectUris.some((uri) => !isAllowedStaticRedirectUri(uri))) {
+      throw new Error(
+        "OAUTH_REDIRECT_URIS entries must use HTTPS (or HTTP loopback for local testing)."
       );
     }
     this.config = {
@@ -57740,6 +57769,7 @@ var OAuthService = class {
       staticRedirectUris,
       allowedGiClientIds: csv(env.OAUTH_ALLOWED_GI_CLIENT_IDS).length > 0 ? new Set(csv(env.OAUTH_ALLOWED_GI_CLIENT_IDS)) : void 0
     };
+    this.loadState();
   }
   protectedResourceMetadata() {
     return {
@@ -57773,11 +57803,11 @@ var OAuthService = class {
     }
     const redirectUris = input.redirect_uris;
     if (redirectUris.length === 0 || redirectUris.some(
-      (value) => typeof value !== "string" || !isAllowedRedirectUri(value)
+      (value) => typeof value !== "string" || !isAllowedDynamicRedirectUri(value)
     )) {
       throw new OAuthError(
         "invalid_redirect_uri",
-        "Every redirect URI must be an absolute HTTPS URL."
+        "Dynamic registration is limited to ChatGPT callback URLs."
       );
     }
     if (input.token_endpoint_auth_method !== void 0 && input.token_endpoint_auth_method !== "none") {
@@ -57887,7 +57917,31 @@ var OAuthService = class {
     if (grant.kind !== "access_token" || grant.issuer !== this.config.issuer || grant.resource !== this.config.resource || !scopeIsAllowed(grant.scope)) {
       throw new OAuthError("invalid_token", "The access token is invalid.", 401);
     }
+    if (this.revokedRefreshFamilies.has(grant.family)) {
+      throw new OAuthError(
+        "invalid_token",
+        "The OAuth grant was revoked. Reconnect the account.",
+        401
+      );
+    }
+    this.assertCredentialsAllowed(grant.credentials);
     return grant;
+  }
+  assertCredentialsAllowed(credentials) {
+    this.assertGiClientAllowed(credentials.clientId);
+  }
+  authorizationErrorRedirect(requestToken, error51) {
+    const request = this.open(
+      "authorization_request",
+      requestToken
+    );
+    this.validateClientRedirect(request.clientId, request.redirectUri);
+    const redirect2 = new URL(request.redirectUri);
+    redirect2.searchParams.set("error", error51.error);
+    redirect2.searchParams.set("error_description", error51.message);
+    if (request.state) redirect2.searchParams.set("state", request.state);
+    redirect2.searchParams.set("iss", this.config.issuer);
+    return redirect2.toString();
   }
   exchangeAuthorizationCode(body, req) {
     const codeValue = stringValue(body.code);
@@ -57930,16 +57984,25 @@ var OAuthService = class {
     if (grant.kind !== "refresh_token" || grant.clientId !== clientId || grant.issuer !== this.config.issuer || grant.resource !== resource) {
       throw new OAuthError("invalid_grant", "The refresh token is invalid.");
     }
+    this.assertCredentialsAllowed(grant.credentials);
+    this.rotateRefreshFamily(grant);
     return this.issueTokens(
       clientId,
       grant.credentials,
       grant.subject,
       grant.scope,
-      grant.resource
+      grant.resource,
+      grant.family
     );
   }
-  issueTokens(clientId, credentials, subject, scope, resource) {
+  issueTokens(clientId, credentials, subject, scope, resource, refreshFamily = randomBytes(16).toString("base64url")) {
     const issuedAt = nowSeconds();
+    const refreshNonce = randomBytes(16).toString("base64url");
+    const refreshExpiry = issuedAt + REFRESH_TOKEN_LIFETIME_SECONDS;
+    this.refreshFamilies.set(refreshFamily, {
+      currentNonce: refreshNonce,
+      expiresAt: refreshExpiry
+    });
     const accessToken = this.seal("access_token", {
       kind: "access_token",
       iat: issuedAt,
@@ -57948,7 +58011,8 @@ var OAuthService = class {
       resource,
       scope,
       credentials,
-      subject
+      subject,
+      family: refreshFamily
     });
     const refreshToken = this.seal("refresh_token", {
       kind: "refresh_token",
@@ -57959,8 +58023,11 @@ var OAuthService = class {
       resource,
       scope,
       credentials,
-      subject
+      subject,
+      family: refreshFamily,
+      nonce: refreshNonce
     });
+    this.persistState();
     return {
       access_token: accessToken,
       token_type: "Bearer",
@@ -58006,6 +58073,37 @@ var OAuthService = class {
       );
     }
   }
+  rotateRefreshFamily(grant) {
+    const now = nowSeconds();
+    for (const [family, state2] of this.refreshFamilies) {
+      if (state2.expiresAt <= now) this.refreshFamilies.delete(family);
+    }
+    for (const [family, expiry] of this.revokedRefreshFamilies) {
+      if (expiry <= now) this.revokedRefreshFamilies.delete(family);
+    }
+    if (this.revokedRefreshFamilies.has(grant.family)) {
+      throw new OAuthError(
+        "invalid_grant",
+        "This refresh token family was revoked. Reconnect the account."
+      );
+    }
+    const state = this.refreshFamilies.get(grant.family);
+    if (state && state.currentNonce !== grant.nonce) {
+      this.refreshFamilies.delete(grant.family);
+      this.revokedRefreshFamilies.set(grant.family, grant.exp ?? now);
+      this.persistState();
+      throw new OAuthError(
+        "invalid_grant",
+        "Refresh token reuse was detected. Reconnect the account."
+      );
+    }
+    if (!state) {
+      this.refreshFamilies.set(grant.family, {
+        currentNonce: grant.nonce,
+        expiresAt: grant.exp ?? now
+      });
+    }
+  }
   consumeAuthorizationCode(nonce, expiresAt) {
     const now = nowSeconds();
     for (const [key, expiry] of this.redeemedCodes) {
@@ -58015,6 +58113,42 @@ var OAuthService = class {
       throw new OAuthError("invalid_grant", "The authorization code was already used.");
     }
     this.redeemedCodes.set(nonce, expiresAt);
+    this.persistState();
+  }
+  loadState() {
+    if (!this.stateFile || !existsSync(this.stateFile)) return;
+    try {
+      const parsed = JSON.parse(readFileSync(this.stateFile, "utf8"));
+      for (const [nonce, expiry] of parsed.redeemedCodes ?? []) {
+        this.redeemedCodes.set(nonce, expiry);
+      }
+      for (const [family, state] of parsed.refreshFamilies ?? []) {
+        this.refreshFamilies.set(family, state);
+      }
+      for (const [family, expiry] of parsed.revokedRefreshFamilies ?? []) {
+        this.revokedRefreshFamilies.set(family, expiry);
+      }
+    } catch {
+      throw new Error(
+        `OAuth state file ${this.stateFile} is unreadable or invalid; refusing to start.`
+      );
+    }
+  }
+  persistState() {
+    if (!this.stateFile) return;
+    const directory = dirname(this.stateFile);
+    mkdirSync(directory, { recursive: true, mode: 448 });
+    const temporary = `${this.stateFile}.${process.pid}.${randomBytes(6).toString("hex")}.tmp`;
+    writeFileSync(
+      temporary,
+      JSON.stringify({
+        redeemedCodes: [...this.redeemedCodes],
+        refreshFamilies: [...this.refreshFamilies],
+        revokedRefreshFamilies: [...this.revokedRefreshFamilies]
+      }),
+      { encoding: "utf8", mode: 384 }
+    );
+    renameSync(temporary, this.stateFile);
   }
   seal(kind, value) {
     const iv = randomBytes(12);
@@ -58065,7 +58199,15 @@ function stringValue(value) {
 function isRecord(value) {
   return typeof value === "object" && value !== null && !Array.isArray(value);
 }
-function isAllowedRedirectUri(value) {
+function isAllowedDynamicRedirectUri(value) {
+  try {
+    const url2 = new URL(value);
+    return url2.protocol === "https:" && url2.hostname === "chatgpt.com" && (url2.pathname.startsWith("/connector/oauth/") || url2.pathname === "/connector_platform_oauth_redirect");
+  } catch {
+    return false;
+  }
+}
+function isAllowedStaticRedirectUri(value) {
   try {
     const url2 = new URL(value);
     return url2.protocol === "https:" && Boolean(url2.hostname) || url2.protocol === "http:" && (url2.hostname === "127.0.0.1" || url2.hostname === "localhost");
@@ -58175,8 +58317,8 @@ function createHttpApp(options = {}) {
     }
   });
   app.post("/oauth/authorize", async (req, res) => {
+    const requestToken = bodyString(req.body, "authorization_request");
     try {
-      const requestToken = bodyString(req.body, "authorization_request");
       const clientId = bodyString(req.body, "gi_client_id");
       const activeToken = bodyString(req.body, "gi_active_token");
       if (!requestToken || !clientId || !activeToken) {
@@ -58199,8 +58341,16 @@ function createHttpApp(options = {}) {
       const redirect2 = new URL(result.redirectUri);
       redirect2.searchParams.set("code", result.code);
       if (result.state) redirect2.searchParams.set("state", result.state);
+      redirect2.searchParams.set("iss", oauth.config.issuer);
       res.status(302).set("Cache-Control", "no-store").redirect(redirect2.toString());
     } catch (error51) {
+      if (requestToken && error51 instanceof OAuthError) {
+        try {
+          res.status(302).set("Cache-Control", "no-store").redirect(oauth.authorizationErrorRedirect(requestToken, error51));
+          return;
+        } catch {
+        }
+      }
       sendAuthorizationError(res, error51);
     }
   });
@@ -58247,6 +58397,7 @@ function createHttpApp(options = {}) {
         sendMcpUnauthorized(res, oauth);
         return;
       }
+      oauth.assertCredentialsAllowed(credentials);
       const client = clientFactory(credentials);
       server = createServer(client);
       transport = new StreamableHTTPServerTransport({
@@ -58260,7 +58411,15 @@ function createHttpApp(options = {}) {
       if (!res.headersSent) {
         const badCredentials = error51 instanceof CredentialHeaderError;
         if (error51 instanceof OAuthError && error51.status === 401) {
-          sendMcpUnauthorized(res, oauth, error51.message);
+          sendMcpUnauthorized(res, oauth, error51.message, true);
+          return;
+        }
+        if (error51 instanceof OAuthError) {
+          res.status(error51.status).json({
+            jsonrpc: "2.0",
+            error: { code: -32003, message: error51.message },
+            id: null
+          });
           return;
         }
         res.status(badCredentials ? 400 : 500).json({
@@ -58303,9 +58462,9 @@ function bodyString(value, name) {
   const field = bodyRecord(value)[name];
   return typeof field === "string" ? field.trim() : "";
 }
-function sendMcpUnauthorized(res, oauth, detail = "OAuth authentication is required.") {
+function sendMcpUnauthorized(res, oauth, detail = "OAuth authentication is required.", invalidToken = false) {
   const metadataUrl = `${oauth.config.issuer}/.well-known/oauth-protected-resource/mcp`;
-  const challenge = `Bearer resource_metadata="${metadataUrl}", scope="golf:read", error="invalid_token", error_description="${detail.replaceAll('"', "'")}"`;
+  const challenge = `Bearer resource_metadata="${metadataUrl}", scope="golf:read"` + (invalidToken ? `, error="invalid_token", error_description="${detail.replaceAll('"', "'")}"` : "");
   res.status(401).set("WWW-Authenticate", challenge).json({
     jsonrpc: "2.0",
     error: { code: -32001, message: detail },

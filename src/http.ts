@@ -112,8 +112,8 @@ export function createHttpApp(options: HttpAppOptions = {}) {
   });
 
   app.post("/oauth/authorize", async (req: Request, res: Response) => {
+    const requestToken = bodyString(req.body, "authorization_request");
     try {
-      const requestToken = bodyString(req.body, "authorization_request");
       const clientId = bodyString(req.body, "gi_client_id");
       const activeToken = bodyString(req.body, "gi_active_token");
       if (!requestToken || !clientId || !activeToken) {
@@ -136,11 +136,23 @@ export function createHttpApp(options: HttpAppOptions = {}) {
       const redirect = new URL(result.redirectUri);
       redirect.searchParams.set("code", result.code);
       if (result.state) redirect.searchParams.set("state", result.state);
+      redirect.searchParams.set("iss", oauth.config.issuer);
       res
         .status(302)
         .set("Cache-Control", "no-store")
         .redirect(redirect.toString());
     } catch (error) {
+      if (requestToken && error instanceof OAuthError) {
+        try {
+          res
+            .status(302)
+            .set("Cache-Control", "no-store")
+            .redirect(oauth.authorizationErrorRedirect(requestToken, error));
+          return;
+        } catch {
+          // An invalid request envelope has no trusted redirect target.
+        }
+      }
       sendAuthorizationError(res, error);
     }
   });
@@ -197,6 +209,7 @@ export function createHttpApp(options: HttpAppOptions = {}) {
         sendMcpUnauthorized(res, oauth);
         return;
       }
+      oauth.assertCredentialsAllowed(credentials);
       const client = clientFactory(credentials);
       server = createServer(client);
       transport = new StreamableHTTPServerTransport({
@@ -210,7 +223,15 @@ export function createHttpApp(options: HttpAppOptions = {}) {
       if (!res.headersSent) {
         const badCredentials = error instanceof CredentialHeaderError;
         if (error instanceof OAuthError && error.status === 401) {
-          sendMcpUnauthorized(res, oauth, error.message);
+          sendMcpUnauthorized(res, oauth, error.message, true);
+          return;
+        }
+        if (error instanceof OAuthError) {
+          res.status(error.status).json({
+            jsonrpc: "2.0",
+            error: { code: -32003, message: error.message },
+            id: null,
+          });
           return;
         }
         res.status(badCredentials ? 400 : 500).json({
@@ -271,12 +292,15 @@ function sendMcpUnauthorized(
   res: Response,
   oauth: OAuthService,
   detail = "OAuth authentication is required.",
+  invalidToken = false,
 ): void {
   const metadataUrl = `${oauth.config.issuer}/.well-known/oauth-protected-resource/mcp`;
   const challenge =
     `Bearer resource_metadata="${metadataUrl}", ` +
-    `scope="golf:read", error="invalid_token", ` +
-    `error_description="${detail.replaceAll('"', "'")}"`;
+    `scope="golf:read"` +
+    (invalidToken
+      ? `, error="invalid_token", error_description="${detail.replaceAll('"', "'")}"`
+      : "");
   res
     .status(401)
     .set("WWW-Authenticate", challenge)

@@ -20,7 +20,8 @@ Use these production URLs:
 The canonical OAuth resource and token audience are both
 `https://mcp.golfintelligence.com/mcp`. The only scope is `golf:read`.
 Authorization uses the code flow with mandatory S256 PKCE. Access tokens last
-one hour; refresh tokens last 30 days.
+one hour; refresh tokens last 30 days and rotate on every use. Detected reuse
+revokes that refresh-token family and requires reconnection.
 
 ## OpenAI app configuration
 
@@ -34,7 +35,10 @@ In ChatGPT Developer Mode, create the MCP app with:
 No OAuth client ID or client secret is needed when dynamic registration is
 selected. ChatGPT registers a public client at `/oauth/register`, uses
 `token_endpoint_auth_method=none`, and protects the code exchange with PKCE.
-Discovery supplies the authorization and token endpoint URLs.
+Discovery supplies the authorization and token endpoint URLs. For phishing
+resistance, dynamic registration accepts only ChatGPT production callback
+URLs; use a predefined client with an explicit redirect allowlist for other
+OAuth clients or local inspection.
 
 For a predefined client instead, set all of the following Fly secrets and enter
 the same client ID and secret in the OpenAI app configuration:
@@ -88,6 +92,18 @@ their own valid GI API Account. The allowlist contains Client IDs only; never
 put Active Tokens in it.
 
 ## Fly secrets and deploy
+
+Create the persistent state volume in the app's primary region once:
+
+```bash
+fly volumes create oauth_state --region ord --size 1
+```
+
+`fly.toml` mounts that volume at `/data` and sets
+`OAUTH_STATE_FILE=/data/oauth-state.json`. The file contains only authorization
+code redemption and refresh-family replay state; it does not contain GI
+credentials. Keep this service at one Machine because a Fly volume attaches to
+one Machine and the state file is the serialization boundary.
 
 Generate the required encryption key once and retain it in the deployment
 secret store:

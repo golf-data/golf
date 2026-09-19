@@ -1,6 +1,9 @@
 import assert from "node:assert/strict";
 import { createHash } from "node:crypto";
+import { mkdtempSync, rmSync } from "node:fs";
 import type { AddressInfo } from "node:net";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 import test from "node:test";
 import { Client } from "@modelcontextprotocol/sdk/client/index.js";
 import { StreamableHTTPClientTransport } from "@modelcontextprotocol/sdk/client/streamableHttp.js";
@@ -195,14 +198,17 @@ test("OAuth discovery, PKCE, refresh, and account-bound tool calls work", async 
     return Response.json({ path: url.pathname });
   };
   const redirectUri = "https://chatgpt.com/connector/oauth/test-callback";
+  const stateDirectory = mkdtempSync(join(tmpdir(), "golf-oauth-"));
+  const oauthEnv = {
+    OAUTH_ENCRYPTION_KEY,
+    OAUTH_CLIENT_ID: "chatgpt-client",
+    OAUTH_REDIRECT_URIS: redirectUri,
+    OAUTH_STATE_FILE: join(stateDirectory, "state.json"),
+    GI_CLIENT_ID: "must-not-be-used",
+    GI_ACTIVE_TOKEN: "must-not-be-used",
+  };
   const app = createHttpApp({
-    env: {
-      OAUTH_ENCRYPTION_KEY,
-      OAUTH_CLIENT_ID: "chatgpt-client",
-      OAUTH_REDIRECT_URIS: redirectUri,
-      GI_CLIENT_ID: "must-not-be-used",
-      GI_ACTIVE_TOKEN: "must-not-be-used",
-    },
+    env: oauthEnv,
     clientFactory: (credentials) => {
       credentialsSeen.push(credentials);
       return new GolfIntelligenceClient(credentials, fetchMock);
@@ -241,11 +247,30 @@ test("OAuth discovery, PKCE, refresh, and account-bound tool calls work", async 
         .code_challenge_methods_supported,
       ["S256"],
     );
+    const rejectedRegistration = await fetch(`${baseUrl}/oauth/register`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ redirect_uris: ["https://evil.example/callback"] }),
+    });
+    assert.equal(rejectedRegistration.status, 400);
+    const acceptedRegistration = await fetch(`${baseUrl}/oauth/register`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        redirect_uris: ["https://chatgpt.com/connector/oauth/test-callback"],
+        token_endpoint_auth_method: "none",
+      }),
+    });
+    assert.equal(acceptedRegistration.status, 201);
+    const oauthClientId = (
+      await acceptedRegistration.json() as { client_id: string }
+    ).client_id;
+    assert.match(oauthClientId, /^gi1\./);
 
     const authorizeUrl = new URL(`${baseUrl}/oauth/authorize`);
     authorizeUrl.search = new URLSearchParams({
       response_type: "code",
-      client_id: "chatgpt-client",
+      client_id: oauthClientId,
       redirect_uri: redirectUri,
       resource: "https://mcp.golfintelligence.com/mcp",
       scope: "golf:read",
@@ -283,7 +308,7 @@ test("OAuth discovery, PKCE, refresh, and account-bound tool calls work", async 
       headers: { "Content-Type": "application/x-www-form-urlencoded" },
       body: new URLSearchParams({
         grant_type: "authorization_code",
-        client_id: "chatgpt-client",
+        client_id: oauthClientId,
         redirect_uri: redirectUri,
         resource: "https://mcp.golfintelligence.com/mcp",
         code,
@@ -303,7 +328,7 @@ test("OAuth discovery, PKCE, refresh, and account-bound tool calls work", async 
       headers: { "Content-Type": "application/x-www-form-urlencoded" },
       body: new URLSearchParams({
         grant_type: "authorization_code",
-        client_id: "chatgpt-client",
+        client_id: oauthClientId,
         redirect_uri: redirectUri,
         resource: "https://mcp.golfintelligence.com/mcp",
         code,
@@ -318,14 +343,16 @@ test("OAuth discovery, PKCE, refresh, and account-bound tool calls work", async 
       headers: { "Content-Type": "application/x-www-form-urlencoded" },
       body: new URLSearchParams({
         grant_type: "refresh_token",
-        client_id: "chatgpt-client",
+        client_id: oauthClientId,
         resource: "https://mcp.golfintelligence.com/mcp",
         refresh_token: tokens.refresh_token,
       }),
     });
     assert.equal(refreshResponse.status, 200);
-    const refreshed = (await refreshResponse.json()) as { access_token: string };
-
+    const refreshed = (await refreshResponse.json()) as {
+      access_token: string;
+      refresh_token: string;
+    };
     const client = new Client({ name: "oauth-test", version: "1.0.0" });
     const transport = new StreamableHTTPClientTransport(
       new URL(`${baseUrl}/mcp`),
@@ -374,6 +401,55 @@ test("OAuth discovery, PKCE, refresh, and account-bound tool calls work", async 
       "/courses/getCourseGroupDetail",
       "/greens/getSlopeImage",
     ]);
+
+    const refreshReplay = await fetch(`${baseUrl}/oauth/token`, {
+      method: "POST",
+      headers: { "Content-Type": "application/x-www-form-urlencoded" },
+      body: new URLSearchParams({
+        grant_type: "refresh_token",
+        client_id: oauthClientId,
+        resource: "https://mcp.golfintelligence.com/mcp",
+        refresh_token: tokens.refresh_token,
+      }),
+    });
+    assert.equal(refreshReplay.status, 400);
+    assert.equal(
+      (await refreshReplay.json() as { error: string }).error,
+      "invalid_grant",
+    );
+
+    const restartedApp = createHttpApp({ env: oauthEnv });
+    const restartedServer = await new Promise<
+      ReturnType<typeof restartedApp.listen>
+    >((resolve) => {
+      const listening = restartedApp.listen(0, "127.0.0.1", () =>
+        resolve(listening),
+      );
+    });
+    try {
+      const restartedPort = (restartedServer.address() as AddressInfo).port;
+      const revokedFamily = await fetch(
+        `http://127.0.0.1:${restartedPort}/oauth/token`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/x-www-form-urlencoded" },
+          body: new URLSearchParams({
+            grant_type: "refresh_token",
+            client_id: oauthClientId,
+            resource: "https://mcp.golfintelligence.com/mcp",
+            refresh_token: refreshed.refresh_token,
+          }),
+        },
+      );
+      assert.equal(revokedFamily.status, 400);
+    } finally {
+      await new Promise<void>((resolve, reject) => {
+        restartedServer.close((error?: Error) =>
+          error ? reject(error) : resolve(),
+        );
+      });
+    }
+
     assert.ok(
       credentialsSeen.length > 0 &&
         credentialsSeen.every(
@@ -386,6 +462,7 @@ test("OAuth discovery, PKCE, refresh, and account-bound tool calls work", async 
     await new Promise<void>((resolve, reject) => {
       httpServer.close((error?: Error) => (error ? reject(error) : resolve()));
     });
+    rmSync(stateDirectory, { recursive: true, force: true });
   }
 });
 
@@ -396,6 +473,7 @@ test("missing or invalid OAuth never falls back to global GI environment credent
       OAUTH_ENCRYPTION_KEY,
       GI_CLIENT_ID: "global-client",
       GI_ACTIVE_TOKEN: "global-token",
+      OAUTH_ALLOWED_GI_CLIENT_IDS: "allowed-review-client",
     },
     clientFactory: (credentials) => {
       credentialsSeen.push(credentials);
@@ -438,6 +516,16 @@ test("missing or invalid OAuth never falls back to global GI environment credent
       },
     });
     assert.equal(invalid.status, 401);
+
+    const disallowedHeaders = await fetch(`http://127.0.0.1:${port}/mcp`, {
+      ...request,
+      headers: {
+        ...request.headers,
+        [CLIENT_ID_HEADER]: "other-client",
+        [ACTIVE_TOKEN_HEADER]: "other-token",
+      },
+    });
+    assert.equal(disallowedHeaders.status, 403);
     assert.equal(credentialsSeen.length, 0);
   } finally {
     await new Promise<void>((resolve, reject) => {

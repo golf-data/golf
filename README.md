@@ -160,11 +160,15 @@ change `app`), then configure the OAuth secrets documented in
 `docs/OPENAI-CHATGPT-OAUTH.md` and deploy. At minimum:
 
 ```bash
+fly volumes create oauth_state --region ord --size 1
 fly secrets set OAUTH_ENCRYPTION_KEY="$(openssl rand -base64 32)"
 fly secrets set OAUTH_ISSUER=https://mcp.golfintelligence.com
 fly secrets set OPENAI_APPS_CHALLENGE_TOKEN=...
 fly deploy
 ```
+
+The mounted volume stores OAuth replay/rotation state, not GI credentials.
+Run one Machine for this file-backed state store.
 
 Do not configure a shared GI account for hosted HTTP callers. If
 `GI_CLIENT_ID` / `GI_ACTIVE_TOKEN` exist for a separate bootstrap or stdio
