@@ -61,6 +61,20 @@ export function createHttpApp(options: HttpAppOptions = {}) {
     res.status(200).json({ status: "ok" });
   });
 
+  app.get(
+    "/.well-known/openai-apps-challenge",
+    (_req: Request, res: Response) => {
+      const token =
+        env.OPENAI_APPS_CHALLENGE_TOKEN?.trim() ||
+        env.OPENAI_APPS_CHALLENGE?.trim();
+      if (!token) {
+        res.status(404).end();
+        return;
+      }
+      res.status(200).type("text/plain").send(token);
+    },
+  );
+
   app.post("/mcp", async (req: Request, res: Response) => {
     let server: ReturnType<typeof createServer> | undefined;
     let transport: StreamableHTTPServerTransport | undefined;

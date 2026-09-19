@@ -12,6 +12,15 @@ curl -sS https://mcp.golfintelligence.com/health
 
 Expect `{"status":"ok"}`.
 
+If OpenAI Apps domain verification is in progress, also check:
+
+```bash
+curl -sS -D - https://mcp.golfintelligence.com/.well-known/openai-apps-challenge -o -
+```
+
+Expect HTTP 200 and `Content-Type: text/plain` with the Fly secret
+`OPENAI_APPS_CHALLENGE_TOKEN` as the body. HTTP 404 means the secret is unset.
+
 ## 2. `initialize` over Streamable HTTP
 
 ```bash
