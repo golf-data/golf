@@ -13,6 +13,7 @@ ENV NODE_ENV=production
 WORKDIR /app
 RUN apk add --no-cache su-exec && mkdir -p /data
 COPY --from=build --chown=node:node /app/dist ./dist
+COPY --chown=node:node public/demo ./public/demo
 
 EXPOSE 3000
 CMD ["sh", "-c", "chown node:node /data && exec su-exec node node dist/http.js"]
