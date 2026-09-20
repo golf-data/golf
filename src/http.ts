@@ -313,7 +313,7 @@ function sendMcpUnauthorized(
     `Bearer resource_metadata="${metadataUrl}", ` +
     `scope="golf:read"` +
     (invalidToken
-      ? `, error="invalid_token", error_description="${detail.replaceAll('\"', "'")}"`
+      ? `, error="invalid_token", error_description="${detail.replaceAll('"', "'")}"`
       : "");
   res
     .status(401)
