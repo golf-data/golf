@@ -1,5 +1,6 @@
 import type { IncomingHttpHeaders, Server as HttpServer } from "node:http";
 import { pathToFileURL } from "node:url";
+import { resolve } from "node:path";
 import { createMcpExpressApp } from "@modelcontextprotocol/sdk/server/express.js";
 import { StreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/streamableHttp.js";
 import express from "express";
@@ -57,6 +58,11 @@ export function createHttpApp(options: HttpAppOptions = {}) {
   const oauth = options.oauthService ?? new OAuthService(env);
   const app = createMcpExpressApp({ host: "0.0.0.0" });
   app.use(express.urlencoded({ extended: false, limit: "32kb" }));
+  // Public, credential-free submission recording; never serve the OAuth data volume.
+  app.use("/demo", express.static(resolve("public/demo"), {
+    dotfiles: "deny", index: "index.html", fallthrough: false,
+    setHeaders: res => { res.setHeader("X-Content-Type-Options", "nosniff"); },
+  }));
 
   app.get("/health", (_req: Request, res: Response) => {
     res.status(200).json({ status: "ok" });
@@ -93,16 +99,24 @@ export function createHttpApp(options: HttpAppOptions = {}) {
 
   app.get("/oauth/authorize", (req: Request, res: Response) => {
     try {
-      const { requestToken } = oauth.createAuthorizationRequest(
+      const { requestToken, request } = oauth.createAuthorizationRequest(
         req.query as Record<string, unknown>,
       );
+      // Browsers can apply form-action to the redirect after the form POST.
+      // Only allow the callback origin after OAuth redirect validation succeeds.
+      const callbackOrigin = new URL(request.redirectUri).origin;
+      // OpenAI's draft scanner relays the ChatGPT callback back to the platform.
+      // Keep this exception limited to the validated ChatGPT callback origin.
+      const formDestinations = callbackOrigin === "https://chatgpt.com"
+        ? `${callbackOrigin} https://platform.openai.com`
+        : callbackOrigin;
       res
         .status(200)
         .set("Cache-Control", "no-store")
         .set("Pragma", "no-cache")
         .set(
           "Content-Security-Policy",
-          "default-src 'none'; style-src 'unsafe-inline'; form-action 'self'; frame-ancestors 'none'; base-uri 'none'",
+          `default-src 'none'; style-src 'unsafe-inline'; form-action 'self' ${formDestinations}; frame-ancestors 'none'; base-uri 'none'`,
         )
         .type("html")
         .send(authorizationPage(requestToken));
@@ -299,7 +313,7 @@ function sendMcpUnauthorized(
     `Bearer resource_metadata="${metadataUrl}", ` +
     `scope="golf:read"` +
     (invalidToken
-      ? `, error="invalid_token", error_description="${detail.replaceAll('"', "'")}"`
+      ? `, error="invalid_token", error_description="${detail.replaceAll('\"', "'")}"`
       : "");
   res
     .status(401)
