@@ -280,6 +280,15 @@ test("OAuth discovery, PKCE, refresh, and account-bound tool calls work", async 
     }).toString();
     const authorizePage = await fetch(authorizeUrl);
     assert.equal(authorizePage.status, 200);
+    assert.equal(
+      authorizePage.headers.get("content-security-policy"),
+      "default-src 'none'; style-src 'unsafe-inline'; form-action 'self' https://chatgpt.com https://platform.openai.com; frame-ancestors 'none'; base-uri 'none'",
+    );
+    const invalidAuthorizeUrl = new URL(authorizeUrl);
+    invalidAuthorizeUrl.searchParams.set("redirect_uri", "https://evil.example/callback");
+    const invalidAuthorizePage = await fetch(invalidAuthorizeUrl);
+    assert.equal(invalidAuthorizePage.status, 400);
+    assert.ok(!invalidAuthorizePage.headers.get("content-security-policy")?.includes("evil.example"));
     const html = await authorizePage.text();
     const requestToken = /name="authorization_request" value="([^"]+)"/.exec(
       html,
