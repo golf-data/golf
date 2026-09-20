@@ -4,6 +4,7 @@ import { pathToFileURL } from "node:url";
 import { z } from "zod";
 import { GolfIntelligenceClient } from "./api.js";
 import { requireSpendConfirmation } from "./spend.js";
+import { toolResult } from "./presentation.js";
 
 const api = new GolfIntelligenceClient({
   clientId: process.env.GI_CLIENT_ID?.trim() ?? "",
@@ -29,17 +30,6 @@ const OAUTH_SECURITY_CONFIG = {
   // Backward-compatible mirror used by existing OpenAI Apps clients.
   _meta: { securitySchemes: OAUTH_SECURITY },
 };
-
-function toolResult(value: unknown) {
-  return {
-    content: [
-      {
-        type: "text" as const,
-        text: typeof value === "string" ? value : JSON.stringify(value, null, 2),
-      },
-    ],
-  };
-}
 
 export function createServer(client: GolfIntelligenceClient = api): McpServer {
   const server = new McpServer({
