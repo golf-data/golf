@@ -43,5 +43,11 @@
       ],
       "fileSha256": "6d20d3c0da77f6b66839712d565056343a1ad3918d64467315044360297df2fd"
     }
+  ],
+  "remotes": [
+    {
+      "type": "streamable-http",
+      "url": "https://mcp.golfintelligence.com/mcp"
+    }
   ]
 }
