@@ -12,7 +12,7 @@ test("marketplace manifest uses the golf handle and required variables", async (
   assert.equal("displayName" in manifest, false);
   assert.equal(
     (manifest.author as { name: string }).name,
-    "Golf Intelligence, by Stracka",
+    "Golf Course Data by Stracka",
   );
   assert.equal(manifest.logo, "assets/logo.svg");
 
@@ -118,19 +118,19 @@ test("registry manifests claim golf without displayName", async () => {
     "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
   );
   assert.equal(agent.name, "golf");
-  assert.equal(agent.author.name, "Golf Intelligence, by Stracka");
+  assert.equal(agent.author.name, "Golf Course Data by Stracka");
   assert.equal("displayName" in agent, false);
 
   const claude = JSON.parse(await readFile(".claude-plugin/plugin.json", "utf8"));
   assert.equal(claude.name, "golf");
-  assert.equal(claude.author.name, "Golf Intelligence, by Stracka");
+  assert.equal(claude.author.name, "Golf Course Data by Stracka");
   assert.equal(claude.mcpServers, "./mcp.json");
   assert.equal("displayName" in claude, false);
 
   const { version } = JSON.parse(await readFile("package.json", "utf8"));
   const server = JSON.parse(await readFile("server.json", "utf8"));
   assert.equal(server.name, "io.github.golf-data/golf");
-  assert.equal(server.title, "Golf Intelligence, by Stracka");
+  assert.equal(server.title, "Golf Course Data by Stracka");
   assert.ok(server.description.length <= 100);
   assert.equal(server.websiteUrl, "https://golfintelligence.com/");
   assert.equal(server.repository.url, "https://github.com/golf-data/golf");
@@ -151,7 +151,7 @@ test("registry manifests claim golf without displayName", async () => {
 test("MCPB manifest keeps the golf handle and stdio Node entry", async () => {
   const manifest = JSON.parse(await readFile("manifest.json", "utf8"));
   assert.equal(manifest.name, "golf");
-  assert.equal(manifest.author.name, "Golf Intelligence, by Stracka");
+  assert.equal(manifest.author.name, "Golf Course Data by Stracka");
   assert.equal(manifest.server.type, "node");
   assert.equal(manifest.server.entry_point, "dist/index.js");
   assert.equal(manifest.server.mcp_config.command, "node");
