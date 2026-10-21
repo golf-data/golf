@@ -5345,10 +5345,10 @@ var require_raw_body = __commonJS({
       if (done) {
         return readStream(stream, encoding, length, limit, wrap(done));
       }
-      return new Promise(function executor(resolve, reject) {
+      return new Promise(function executor(resolve3, reject) {
         readStream(stream, encoding, length, limit, function onRead(err, buf) {
           if (err) return reject(err);
-          resolve(buf);
+          resolve3(buf);
         });
       });
     }
@@ -18934,7 +18934,7 @@ var require_view = __commonJS({
     var basename = path.basename;
     var extname = path.extname;
     var join = path.join;
-    var resolve = path.resolve;
+    var resolve3 = path.resolve;
     module.exports = View;
     function View(name, options) {
       var opts = options || {};
@@ -18968,7 +18968,7 @@ var require_view = __commonJS({
       debug('lookup "%s"', name);
       for (var i = 0; i < roots.length && !path2; i++) {
         var root = roots[i];
-        var loc = resolve(root, name);
+        var loc = resolve3(root, name);
         var dir = dirname2(loc);
         var file2 = basename(loc);
         path2 = this.resolve(dir, file2);
@@ -18993,7 +18993,7 @@ var require_view = __commonJS({
       });
       sync = false;
     };
-    View.prototype.resolve = function resolve2(dir, file2) {
+    View.prototype.resolve = function resolve4(dir, file2) {
       var ext = this.ext;
       var path2 = join(dir, file2);
       var stat = tryStat(path2);
@@ -21252,7 +21252,7 @@ var require_application = __commonJS({
     var compileETag = require_utils3().compileETag;
     var compileQueryParser = require_utils3().compileQueryParser;
     var compileTrust = require_utils3().compileTrust;
-    var resolve = __require("node:path").resolve;
+    var resolve3 = __require("node:path").resolve;
     var once = require_once();
     var Router = require_router();
     var slice = Array.prototype.slice;
@@ -21306,7 +21306,7 @@ var require_application = __commonJS({
       this.mountpath = "/";
       this.locals.settings = this.settings;
       this.set("view", View);
-      this.set("views", resolve("views"));
+      this.set("views", resolve3("views"));
       this.set("jsonp callback name", "callback");
       if (env === "production") {
         this.enable("view cache");
@@ -22886,7 +22886,7 @@ var require_send = __commonJS({
     var extname = path.extname;
     var join = path.join;
     var normalize = path.normalize;
-    var resolve = path.resolve;
+    var resolve3 = path.resolve;
     var sep = path.sep;
     var BYTES_RANGE_REGEXP = /^ *bytes=/;
     var MAX_MAXAGE = 60 * 60 * 24 * 365 * 1e3;
@@ -22915,7 +22915,7 @@ var require_send = __commonJS({
       this._maxage = opts.maxAge || opts.maxage;
       this._maxage = typeof this._maxage === "string" ? ms(this._maxage) : Number(this._maxage);
       this._maxage = !isNaN(this._maxage) ? Math.min(Math.max(0, this._maxage), MAX_MAXAGE) : 0;
-      this._root = opts.root ? resolve(opts.root) : null;
+      this._root = opts.root ? resolve3(opts.root) : null;
     }
     util2.inherits(SendStream, Stream);
     SendStream.prototype.error = function error51(status, err) {
@@ -23064,7 +23064,7 @@ var require_send = __commonJS({
           return res;
         }
         parts = normalize(path2).split(sep);
-        path2 = resolve(path2);
+        path2 = resolve3(path2);
       }
       if (containsDotFile(parts)) {
         debug('%s dotfile "%s"', this._dotfiles, path2);
@@ -23442,7 +23442,7 @@ var require_response = __commonJS({
     var cookie = require_cookie();
     var send = require_send();
     var extname = path.extname;
-    var resolve = path.resolve;
+    var resolve3 = path.resolve;
     var vary = require_vary();
     var { Buffer: Buffer2 } = __require("node:buffer");
     var res = Object.create(http.ServerResponse.prototype);
@@ -23648,7 +23648,7 @@ var require_response = __commonJS({
       }
       opts = Object.create(opts);
       opts.headers = headers;
-      var fullPath = !opts.root ? resolve(path2) : path2;
+      var fullPath = !opts.root ? resolve3(path2) : path2;
       return this.sendFile(fullPath, opts, done);
     };
     res.contentType = res.type = function contentType3(type) {
@@ -23897,7 +23897,7 @@ var require_serve_static = __commonJS({
     var encodeUrl = require_encodeurl();
     var escapeHtml2 = require_escape_html();
     var parseUrl = require_parseurl();
-    var resolve = __require("path").resolve;
+    var resolve3 = __require("path").resolve;
     var send = require_send();
     var url2 = __require("url");
     module.exports = serveStatic;
@@ -23916,7 +23916,7 @@ var require_serve_static = __commonJS({
         throw new TypeError("option setHeaders must be function");
       }
       opts.maxage = opts.maxage || opts.maxAge || 0;
-      opts.root = resolve(root);
+      opts.root = resolve3(root);
       var onDirectory = redirect2 ? createRedirectDirectoryListener() : createNotFoundDirectoryListener();
       return function serveStatic2(req, res, next) {
         if (req.method !== "GET" && req.method !== "HEAD") {
@@ -26993,7 +26993,7 @@ var require_compile = __commonJS({
       const schOrFunc = root.refs[ref];
       if (schOrFunc)
         return schOrFunc;
-      let _sch = resolve.call(this, root, ref);
+      let _sch = resolve3.call(this, root, ref);
       if (_sch === void 0) {
         const schema = (_a3 = root.localRefs) === null || _a3 === void 0 ? void 0 : _a3[ref];
         const { schemaId } = this.opts;
@@ -27020,7 +27020,7 @@ var require_compile = __commonJS({
     function sameSchemaEnv(s1, s2) {
       return s1.schema === s2.schema && s1.root === s2.root && s1.baseId === s2.baseId;
     }
-    function resolve(root, ref) {
+    function resolve3(root, ref) {
       let sch;
       while (typeof (sch = this.refs[ref]) == "string")
         ref = sch;
@@ -27845,7 +27845,7 @@ var require_fast_uri = __commonJS({
       }
       return uri;
     }
-    function resolve(baseURI, relativeURI, options) {
+    function resolve3(baseURI, relativeURI, options) {
       const schemelessOptions = options ? Object.assign({ scheme: "null" }, options) : { scheme: "null" };
       const {
         parsed: baseParsed,
@@ -28207,7 +28207,7 @@ var require_fast_uri = __commonJS({
     var fastUri = {
       SCHEMES,
       normalize,
-      resolve,
+      resolve: resolve3,
       resolveComponent,
       equal,
       serialize,
@@ -31198,6 +31198,7 @@ var require_dist5 = __commonJS({
 
 // src/http.ts
 import { pathToFileURL as pathToFileURL2 } from "node:url";
+import { resolve as resolve2 } from "node:path";
 
 // node_modules/@modelcontextprotocol/sdk/dist/esm/server/express.js
 var import_express = __toESM(require_express2(), 1);
@@ -31689,7 +31690,7 @@ var readBodyDirect = (request) => {
     request[bodyBufferKey] = buffered;
     return Promise.resolve(buffered);
   }
-  const promise2 = new Promise((resolve, reject) => {
+  const promise2 = new Promise((resolve3, reject) => {
     const chunks = [];
     let settled = false;
     const finish = (callback) => {
@@ -31707,7 +31708,7 @@ var readBodyDirect = (request) => {
         else if (recovered === void 0) reject(error51 ?? normalizeAbortError(request, incoming));
         else {
           request[bodyBufferKey] = recovered;
-          resolve(recovered);
+          resolve3(recovered);
         }
       });
       return true;
@@ -31719,7 +31720,7 @@ var readBodyDirect = (request) => {
       finish(() => {
         const buffer = chunks.length === 1 ? chunks[0] : Buffer.concat(chunks);
         request[bodyBufferKey] = buffer;
-        resolve(buffer);
+        resolve3(buffer);
       });
     };
     const onError = (error51) => {
@@ -32244,7 +32245,7 @@ var responseViaResponseObject = async (res, outgoing, options = {}) => {
         });
         if (!chunk) {
           if (i === 1) {
-            await new Promise((resolve) => setTimeout(resolve));
+            await new Promise((resolve3) => setTimeout(resolve3));
             maxReadCount = 3;
             continue;
           }
@@ -48971,9 +48972,9 @@ data:
       const initRequest = messages.find((m) => isInitializeRequest(m));
       const clientProtocolVersion = initRequest ? initRequest.params.protocolVersion : req.headers.get("mcp-protocol-version") ?? DEFAULT_NEGOTIATED_PROTOCOL_VERSION;
       if (this._enableJsonResponse) {
-        return new Promise((resolve) => {
+        return new Promise((resolve3) => {
           this._streamMapping.set(streamId, {
-            resolveJson: resolve,
+            resolveJson: resolve3,
             cleanup: () => {
               this._streamMapping.delete(streamId);
             }
@@ -55374,7 +55375,7 @@ var Protocol = class {
           return;
         }
         const pollInterval = task2.pollInterval ?? this._options?.defaultTaskPollInterval ?? 1e3;
-        await new Promise((resolve) => setTimeout(resolve, pollInterval));
+        await new Promise((resolve3) => setTimeout(resolve3, pollInterval));
         options?.signal?.throwIfAborted();
       }
     } catch (error51) {
@@ -55391,7 +55392,7 @@ var Protocol = class {
    */
   request(request, resultSchema, options) {
     const { relatedRequestId, resumptionToken, onresumptiontoken, task, relatedTask } = options ?? {};
-    return new Promise((resolve, reject) => {
+    return new Promise((resolve3, reject) => {
       const earlyReject = (error51) => {
         reject(error51);
       };
@@ -55469,7 +55470,7 @@ var Protocol = class {
           if (!parseResult.success) {
             reject(parseResult.error);
           } else {
-            resolve(parseResult.data);
+            resolve3(parseResult.data);
           }
         } catch (error51) {
           reject(error51);
@@ -55730,12 +55731,12 @@ var Protocol = class {
       }
     } catch {
     }
-    return new Promise((resolve, reject) => {
+    return new Promise((resolve3, reject) => {
       if (signal.aborted) {
         reject(new McpError(ErrorCode.InvalidRequest, "Request cancelled"));
         return;
       }
-      const timeoutId = setTimeout(resolve, interval);
+      const timeoutId = setTimeout(resolve3, interval);
       signal.addEventListener("abort", () => {
         clearTimeout(timeoutId);
         reject(new McpError(ErrorCode.InvalidRequest, "Request cancelled"));
@@ -56826,7 +56827,7 @@ var McpServer = class {
     let task = createTaskResult.task;
     const pollInterval = task.pollInterval ?? 5e3;
     while (task.status !== "completed" && task.status !== "failed" && task.status !== "cancelled") {
-      await new Promise((resolve) => setTimeout(resolve, pollInterval));
+      await new Promise((resolve3) => setTimeout(resolve3, pollInterval));
       const updatedTask = await extra.taskStore.getTask(taskId);
       if (!updatedTask) {
         throw new McpError(ErrorCode.InternalError, `Task ${taskId} not found during polling`);
@@ -57490,12 +57491,12 @@ var StdioServerTransport = class {
     this.onclose?.();
   }
   send(message) {
-    return new Promise((resolve) => {
+    return new Promise((resolve3) => {
       const json3 = serializeMessage(message);
       if (this._stdout.write(json3)) {
-        resolve();
+        resolve3();
       } else {
-        this._stdout.once("drain", resolve);
+        this._stdout.once("drain", resolve3);
       }
     });
   }
@@ -57511,6 +57512,65 @@ function requireSpendConfirmation(confirmSpend, credits, toolName) {
       `${toolName} costs ${credits} credit${credits === 1 ? "" : "s"}. Set confirm_spend=true to confirm this paid API call.`
     );
   }
+}
+
+// src/presentation.ts
+import { gunzipSync } from "node:zlib";
+function record2(value) {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+function pick2(value, keys) {
+  return Object.fromEntries(keys.filter((k) => value[k] !== void 0).map((k) => [k, value[k]]));
+}
+function coursePresentation(value) {
+  if (!record2(value) || typeof value.publicId !== "string") return value;
+  const summary = pick2(value, ["publicId", "name", "updatedOn", "courseGroupId", "facility", "courseArchitect", "yearOpened", "guestPolicyTypeId", "courseEnvironmentTypeId", "isElevationData", "tileSets", "courseGroupDataStats", "isActive"]);
+  if (Array.isArray(value.holes)) {
+    const columns = ["holeId", "holeNumber", "holeName", "holeType", "teeGPSCoordinate", "approachGPSCoordinate", "greenGPSCoordinate"];
+    summary.holes = value.holes.filter(record2).map((h) => pick2(h, columns));
+  }
+  if (Array.isArray(value.courses)) {
+    summary.courses = value.courses.filter(record2).map((course) => ({
+      ...pick2(course, ["courseId", "name", "courseHoleType", "courseStatusType"]),
+      tees: Array.isArray(course.tees) ? course.tees.filter(record2).map((tee) => ({
+        ...pick2(tee, ["teeId", "teeName", "courseTeeType", "teeType", "isTeeActive", "par", "yardage", "slope", "rating"]),
+        holes: Array.isArray(tee.holes) ? tee.holes.filter(record2).map((h) => pick2(h, ["holeId", "holeNumber", "par", "yardage", "allocation"])) : []
+      })) : []
+    }));
+  }
+  if (Array.isArray(value.layouts)) {
+    summary.layouts = value.layouts.filter(record2).map((layout) => ({
+      ...pick2(layout, ["layoutId", "layoutName", "layoutType"]),
+      holeIds: Array.isArray(layout.holes) ? layout.holes.filter(record2).map((h) => h.holeId) : []
+    }));
+  }
+  let geometry = value.gpsItems;
+  if (typeof value.data === "string" && value.data) {
+    try {
+      geometry = JSON.parse(gunzipSync(Buffer.from(value.data, "base64"), { maxOutputLength: 16 * 1024 * 1024 }).toString("utf8"));
+    } catch {
+      summary.geometryNote = "Compressed geometry could not be summarized; original payload is retained in result metadata.";
+    }
+  }
+  if (Array.isArray(geometry)) {
+    const counts = {};
+    const holeIds = /* @__PURE__ */ new Set();
+    for (const item of geometry.filter(record2)) {
+      const type = String(item.gpsType ?? "Unknown");
+      counts[type] = (counts[type] ?? 0) + 1;
+      if (item.holeId !== void 0) holeIds.add(item.holeId);
+    }
+    summary.geometry = { recordCount: geometry.length, holeCount: holeIds.size, countsByType: counts, note: "Geometry summary only. Full shapes remain in the original payload in result metadata; do not infer shape coordinates from counts." };
+  }
+  summary.presentationNote = "Compact course data for model context. All returned tee score rows are included; allocation is the source handicap field. Original API payload, including detailed geometry and auxiliary fields, is retained in _meta.golfRawResult for clients.";
+  return summary;
+}
+function toolResult(value) {
+  const presented = coursePresentation(value);
+  return {
+    content: [{ type: "text", text: typeof presented === "string" ? presented : JSON.stringify(presented) }],
+    ...presented === value ? {} : { _meta: { golfRawResult: value } }
+  };
 }
 
 // src/index.ts
@@ -57535,20 +57595,10 @@ var OAUTH_SECURITY_CONFIG = {
   // Backward-compatible mirror used by existing OpenAI Apps clients.
   _meta: { securitySchemes: OAUTH_SECURITY }
 };
-function toolResult(value) {
-  return {
-    content: [
-      {
-        type: "text",
-        text: typeof value === "string" ? value : JSON.stringify(value, null, 2)
-      }
-    ]
-  };
-}
 function createServer(client = api) {
   const server = new McpServer({
     name: "golf",
-    version: "1.0.2"
+    version: "1.0.7"
   });
   server.registerTool(
     "search_course_groups",
@@ -57572,6 +57622,59 @@ function createServer(client = api) {
         }
       })
     )
+  );
+  server.registerTool(
+    "search_courses_near",
+    {
+      title: "Search Golf Courses Near a Point",
+      description: "Free (0 credits). Find Golf Intelligence course groups within a radius (miles) of a latitude/longitude, nearest first. Use the PublicId with the paid detail tools.",
+      inputSchema: {
+        latitude: external_exports.number().min(-90).max(90).describe("Latitude in decimal degrees"),
+        longitude: external_exports.number().min(-180).max(180).describe("Longitude in decimal degrees"),
+        radius_miles: external_exports.number().positive().max(100).describe("Search radius in miles (max 100)"),
+        rows: external_exports.number().int().positive().max(50).optional().describe("Maximum number of results (default 20, max 50)")
+      },
+      annotations: READ_ONLY_LOOKUP_ANNOTATIONS,
+      ...OAUTH_SECURITY_CONFIG
+    },
+    async ({ latitude, longitude, radius_miles, rows }) => {
+      const limit = rows ?? 20;
+      const response = await client.request("POST", "/courses/searchCourseGroups", {
+        body: { gpsCoordinate: { latitude, longitude }, rows: 50 }
+      });
+      const within = (response?.data ?? []).filter((item) => typeof item.distance === "number" && item.distance <= radius_miles).slice(0, limit);
+      return toolResult({
+        center: { latitude, longitude },
+        radius_miles,
+        distance_unit: "miles",
+        total: within.length,
+        data: within
+      });
+    }
+  );
+  server.registerTool(
+    "get_course_last_revised",
+    {
+      title: "Get Course Last-Revised Date",
+      description: "Paid (1 credit, billed as a scorecard call). Get the date a course group's data was last revised (updatedOn). Search first, then explicitly confirm this charge.",
+      inputSchema: {
+        PublicId: external_exports.string().min(1).describe("Course group PublicId from search"),
+        confirm_spend: external_exports.boolean().describe("Must be true to authorize spending 1 credit")
+      },
+      annotations: PAID_READ_ONLY_LOOKUP_ANNOTATIONS,
+      ...OAUTH_SECURITY_CONFIG
+    },
+    async ({ PublicId, confirm_spend }) => {
+      requireSpendConfirmation(confirm_spend, 1, "get_course_last_revised");
+      const card = await client.request("GET", "/courses/getCourseGroupScorecard", {
+        query: { PublicId }
+      });
+      return toolResult({
+        PublicId: card?.publicId ?? PublicId,
+        name: card?.name ?? null,
+        last_revised: card?.updatedOn ?? null
+      });
+    }
   );
   server.registerTool(
     "get_course_group_scorecard",
@@ -57807,7 +57910,7 @@ var OAuthService = class {
     )) {
       throw new OAuthError(
         "invalid_redirect_uri",
-        "Dynamic registration is limited to ChatGPT callback URLs."
+        "Dynamic registration is limited to documented MCP client callback URLs."
       );
     }
     if (input.token_endpoint_auth_method !== void 0 && input.token_endpoint_auth_method !== "none") {
@@ -58059,7 +58162,7 @@ var OAuthService = class {
       return;
     }
     const client = this.open("dynamic_client", clientId);
-    if (client.kind !== "dynamic_client" || !client.redirectUris.includes(redirectUri)) {
+    if (client.kind !== "dynamic_client" || !redirectMatches(client.redirectUris, redirectUri)) {
       throw new OAuthError("invalid_request", "redirect_uri is not registered.");
     }
   }
@@ -58199,13 +58302,65 @@ function stringValue(value) {
 function isRecord(value) {
   return typeof value === "object" && value !== null && !Array.isArray(value);
 }
-function isAllowedDynamicRedirectUri(value) {
+var DYNAMIC_REDIRECT_EXACT = /* @__PURE__ */ new Set([
+  // OpenAI ChatGPT
+  "https://chatgpt.com/connector_platform_oauth_redirect",
+  // Anthropic Claude (claude.ai and claude.com)
+  "https://claude.ai/api/mcp/auth_callback",
+  "https://claude.com/api/mcp/auth_callback",
+  // Perplexity
+  "https://www.perplexity.ai/rest/connections/oauth_callback",
+  // Mistral Studio connectors (Le Chat / AI Studio)
+  "https://console.mistral.ai/build/connectors/debugger/oauth-callback",
+  // GitHub Copilot in VS Code
+  "https://vscode.dev/redirect",
+  "https://insiders.vscode.dev/redirect"
+]);
+var DYNAMIC_REDIRECT_PREFIXES = [
+  // OpenAI ChatGPT per-connector callbacks
+  { host: "chatgpt.com", prefix: "/connector/oauth/" },
+  // Microsoft Copilot Studio / Power Platform custom connectors
+  { host: "global.consent.azure-apim.net", prefix: "/redirect/" }
+];
+var LOOPBACK_HOSTS = /* @__PURE__ */ new Set(["127.0.0.1", "localhost", "[::1]"]);
+var LOOPBACK_PATHS = /* @__PURE__ */ new Set(["/", "/callback", "/oauth/callback"]);
+function isLoopbackRedirectUri(value) {
   try {
     const url2 = new URL(value);
-    return url2.protocol === "https:" && url2.hostname === "chatgpt.com" && (url2.pathname.startsWith("/connector/oauth/") || url2.pathname === "/connector_platform_oauth_redirect");
+    return url2.protocol === "http:" && LOOPBACK_HOSTS.has(url2.hostname) && LOOPBACK_PATHS.has(url2.pathname) && !url2.username && !url2.password && !url2.hash;
   } catch {
     return false;
   }
+}
+function loopbackKey(value) {
+  const url2 = new URL(value);
+  return `${url2.hostname}${url2.pathname}${url2.search}`;
+}
+function isAllowedDynamicRedirectUri(value) {
+  try {
+    if (isLoopbackRedirectUri(value)) return true;
+    const url2 = new URL(value);
+    if (url2.protocol !== "https:" || url2.username || url2.password || url2.hash) {
+      return false;
+    }
+    if (url2.port) return false;
+    if (DYNAMIC_REDIRECT_EXACT.has(`${url2.origin}${url2.pathname}`)) {
+      return true;
+    }
+    return DYNAMIC_REDIRECT_PREFIXES.some(
+      ({ host, prefix }) => url2.hostname === host && url2.pathname.startsWith(prefix) && url2.pathname.length > prefix.length && !url2.pathname.includes("..")
+    );
+  } catch {
+    return false;
+  }
+}
+function redirectMatches(registered, requested) {
+  if (registered.includes(requested)) return true;
+  if (!isLoopbackRedirectUri(requested)) return false;
+  const key = loopbackKey(requested);
+  return registered.some(
+    (uri) => isLoopbackRedirectUri(uri) && loopbackKey(uri) === key
+  );
 }
 function isAllowedStaticRedirectUri(value) {
   try {
@@ -58250,6 +58405,21 @@ function basicClient(req, expectedClientId) {
   }
 }
 
+// src/sample.ts
+import { readFileSync as readFileSync2 } from "node:fs";
+import { resolve } from "node:path";
+var SAMPLE_PUBLIC_ID = "225V2ANM";
+var SAMPLE_DIR = resolve("public/sample", SAMPLE_PUBLIC_ID);
+var cached2;
+function sampleCourseJson() {
+  cached2 ??= readFileSync2(resolve(SAMPLE_DIR, "course.json"), "utf8");
+  return cached2;
+}
+function sampleGreenPath(file2) {
+  const match = /^hole-([1-9]|1[0-8])\.png$/.exec(file2);
+  return match ? resolve(SAMPLE_DIR, "greens", file2) : void 0;
+}
+
 // src/http.ts
 var CLIENT_ID_HEADER = "x-gi-client-id";
 var ACTIVE_TOKEN_HEADER = "x-gi-active-token";
@@ -58283,6 +58453,25 @@ function createHttpApp(options = {}) {
   const oauth = options.oauthService ?? new OAuthService(env);
   const app = createMcpExpressApp({ host: "0.0.0.0" });
   app.use(import_express3.default.urlencoded({ extended: false, limit: "32kb" }));
+  app.use("/demo", import_express3.default.static(resolve2("public/demo"), {
+    dotfiles: "deny",
+    index: "index.html",
+    fallthrough: false,
+    setHeaders: (res) => {
+      res.setHeader("X-Content-Type-Options", "nosniff");
+    }
+  }));
+  const sampleRefused = (_req, res) => sendMcpUnauthorized(res, oauth, "OAuth authentication is required for this course.");
+  app.get("/sample/course/:publicId", (req, res) => {
+    if (req.params.publicId !== SAMPLE_PUBLIC_ID) return sampleRefused(req, res);
+    res.status(200).set("Cache-Control", "public, max-age=3600").set("X-Content-Type-Options", "nosniff").type("application/json").send(sampleCourseJson());
+  });
+  app.get("/sample/course/:publicId/greens/:file", (req, res) => {
+    const file2 = sampleGreenPath(String(req.params.file));
+    if (req.params.publicId !== SAMPLE_PUBLIC_ID || !file2) return sampleRefused(req, res);
+    res.set("Cache-Control", "public, max-age=86400").set("X-Content-Type-Options", "nosniff").sendFile(file2);
+  });
+  app.all(/^\/sample(\/.*)?$/, sampleRefused);
   app.get("/health", (_req, res) => {
     res.status(200).json({ status: "ok" });
   });
@@ -58305,12 +58494,14 @@ function createHttpApp(options = {}) {
   });
   app.get("/oauth/authorize", (req, res) => {
     try {
-      const { requestToken } = oauth.createAuthorizationRequest(
+      const { requestToken, request } = oauth.createAuthorizationRequest(
         req.query
       );
+      const callbackOrigin = new URL(request.redirectUri).origin;
+      const formDestinations = callbackOrigin === "https://chatgpt.com" ? `${callbackOrigin} https://platform.openai.com` : callbackOrigin;
       res.status(200).set("Cache-Control", "no-store").set("Pragma", "no-cache").set(
         "Content-Security-Policy",
-        "default-src 'none'; style-src 'unsafe-inline'; form-action 'self'; frame-ancestors 'none'; base-uri 'none'"
+        `default-src 'none'; style-src 'unsafe-inline'; form-action 'self' ${formDestinations}; frame-ancestors 'none'; base-uri 'none'`
       ).type("html").send(authorizationPage(requestToken));
     } catch (error51) {
       sendAuthorizationError(res, error51);
@@ -58502,14 +58693,14 @@ function authorizationPage(requestToken) {
 <body>
   <main>
     <h1>Connect Golf Intelligence</h1>
-    <p>Sign in with the Client ID and Active Token from your Golf Intelligence API Account. Calls made through ChatGPT use that account and its credits.</p>
+    <p>Sign in with the Client ID and Active Token from your Golf Intelligence API Account. Calls made through your AI assistant use that account and its credits.</p>
     <form method="post" action="/oauth/authorize">
       <input type="hidden" name="authorization_request" value="${escapeHtml(requestToken)}">
       <label for="gi_client_id">Client ID</label>
       <input id="gi_client_id" name="gi_client_id" required autocomplete="username">
       <label for="gi_active_token">Active Token</label>
       <input id="gi_active_token" name="gi_active_token" type="password" required autocomplete="current-password">
-      <button type="submit">Authorize ChatGPT</button>
+      <button type="submit">Authorize</button>
     </form>
     <p class="note">Your credentials are validated with Golf Intelligence and bound to encrypted OAuth tokens. They are not logged.</p>
   </main>
@@ -58545,8 +58736,8 @@ function configuredPort() {
 }
 async function startHttpServer(port = configuredPort(), host = "0.0.0.0") {
   const app = createHttpApp();
-  return new Promise((resolve, reject) => {
-    const httpServer = app.listen(port, host, () => resolve(httpServer));
+  return new Promise((resolve3, reject) => {
+    const httpServer = app.listen(port, host, () => resolve3(httpServer));
     httpServer.once("error", reject);
   });
 }

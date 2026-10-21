@@ -31381,6 +31381,65 @@ function requireSpendConfirmation(confirmSpend, credits, toolName) {
   }
 }
 
+// src/presentation.ts
+import { gunzipSync } from "node:zlib";
+function record2(value) {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+function pick2(value, keys) {
+  return Object.fromEntries(keys.filter((k) => value[k] !== void 0).map((k) => [k, value[k]]));
+}
+function coursePresentation(value) {
+  if (!record2(value) || typeof value.publicId !== "string") return value;
+  const summary = pick2(value, ["publicId", "name", "updatedOn", "courseGroupId", "facility", "courseArchitect", "yearOpened", "guestPolicyTypeId", "courseEnvironmentTypeId", "isElevationData", "tileSets", "courseGroupDataStats", "isActive"]);
+  if (Array.isArray(value.holes)) {
+    const columns = ["holeId", "holeNumber", "holeName", "holeType", "teeGPSCoordinate", "approachGPSCoordinate", "greenGPSCoordinate"];
+    summary.holes = value.holes.filter(record2).map((h) => pick2(h, columns));
+  }
+  if (Array.isArray(value.courses)) {
+    summary.courses = value.courses.filter(record2).map((course) => ({
+      ...pick2(course, ["courseId", "name", "courseHoleType", "courseStatusType"]),
+      tees: Array.isArray(course.tees) ? course.tees.filter(record2).map((tee) => ({
+        ...pick2(tee, ["teeId", "teeName", "courseTeeType", "teeType", "isTeeActive", "par", "yardage", "slope", "rating"]),
+        holes: Array.isArray(tee.holes) ? tee.holes.filter(record2).map((h) => pick2(h, ["holeId", "holeNumber", "par", "yardage", "allocation"])) : []
+      })) : []
+    }));
+  }
+  if (Array.isArray(value.layouts)) {
+    summary.layouts = value.layouts.filter(record2).map((layout) => ({
+      ...pick2(layout, ["layoutId", "layoutName", "layoutType"]),
+      holeIds: Array.isArray(layout.holes) ? layout.holes.filter(record2).map((h) => h.holeId) : []
+    }));
+  }
+  let geometry = value.gpsItems;
+  if (typeof value.data === "string" && value.data) {
+    try {
+      geometry = JSON.parse(gunzipSync(Buffer.from(value.data, "base64"), { maxOutputLength: 16 * 1024 * 1024 }).toString("utf8"));
+    } catch {
+      summary.geometryNote = "Compressed geometry could not be summarized; original payload is retained in result metadata.";
+    }
+  }
+  if (Array.isArray(geometry)) {
+    const counts = {};
+    const holeIds = /* @__PURE__ */ new Set();
+    for (const item of geometry.filter(record2)) {
+      const type = String(item.gpsType ?? "Unknown");
+      counts[type] = (counts[type] ?? 0) + 1;
+      if (item.holeId !== void 0) holeIds.add(item.holeId);
+    }
+    summary.geometry = { recordCount: geometry.length, holeCount: holeIds.size, countsByType: counts, note: "Geometry summary only. Full shapes remain in the original payload in result metadata; do not infer shape coordinates from counts." };
+  }
+  summary.presentationNote = "Compact course data for model context. All returned tee score rows are included; allocation is the source handicap field. Original API payload, including detailed geometry and auxiliary fields, is retained in _meta.golfRawResult for clients.";
+  return summary;
+}
+function toolResult(value) {
+  const presented = coursePresentation(value);
+  return {
+    content: [{ type: "text", text: typeof presented === "string" ? presented : JSON.stringify(presented) }],
+    ...presented === value ? {} : { _meta: { golfRawResult: value } }
+  };
+}
+
 // src/index.ts
 var api = new GolfIntelligenceClient({
   clientId: process.env.GI_CLIENT_ID?.trim() ?? "",
@@ -31403,20 +31462,10 @@ var OAUTH_SECURITY_CONFIG = {
   // Backward-compatible mirror used by existing OpenAI Apps clients.
   _meta: { securitySchemes: OAUTH_SECURITY }
 };
-function toolResult(value) {
-  return {
-    content: [
-      {
-        type: "text",
-        text: typeof value === "string" ? value : JSON.stringify(value, null, 2)
-      }
-    ]
-  };
-}
 function createServer(client = api) {
   const server = new McpServer({
     name: "golf",
-    version: "1.0.2"
+    version: "1.0.7"
   });
   server.registerTool(
     "search_course_groups",
@@ -31440,6 +31489,59 @@ function createServer(client = api) {
         }
       })
     )
+  );
+  server.registerTool(
+    "search_courses_near",
+    {
+      title: "Search Golf Courses Near a Point",
+      description: "Free (0 credits). Find Golf Intelligence course groups within a radius (miles) of a latitude/longitude, nearest first. Use the PublicId with the paid detail tools.",
+      inputSchema: {
+        latitude: external_exports.number().min(-90).max(90).describe("Latitude in decimal degrees"),
+        longitude: external_exports.number().min(-180).max(180).describe("Longitude in decimal degrees"),
+        radius_miles: external_exports.number().positive().max(100).describe("Search radius in miles (max 100)"),
+        rows: external_exports.number().int().positive().max(50).optional().describe("Maximum number of results (default 20, max 50)")
+      },
+      annotations: READ_ONLY_LOOKUP_ANNOTATIONS,
+      ...OAUTH_SECURITY_CONFIG
+    },
+    async ({ latitude, longitude, radius_miles, rows }) => {
+      const limit = rows ?? 20;
+      const response = await client.request("POST", "/courses/searchCourseGroups", {
+        body: { gpsCoordinate: { latitude, longitude }, rows: 50 }
+      });
+      const within = (response?.data ?? []).filter((item) => typeof item.distance === "number" && item.distance <= radius_miles).slice(0, limit);
+      return toolResult({
+        center: { latitude, longitude },
+        radius_miles,
+        distance_unit: "miles",
+        total: within.length,
+        data: within
+      });
+    }
+  );
+  server.registerTool(
+    "get_course_last_revised",
+    {
+      title: "Get Course Last-Revised Date",
+      description: "Paid (1 credit, billed as a scorecard call). Get the date a course group's data was last revised (updatedOn). Search first, then explicitly confirm this charge.",
+      inputSchema: {
+        PublicId: external_exports.string().min(1).describe("Course group PublicId from search"),
+        confirm_spend: external_exports.boolean().describe("Must be true to authorize spending 1 credit")
+      },
+      annotations: PAID_READ_ONLY_LOOKUP_ANNOTATIONS,
+      ...OAUTH_SECURITY_CONFIG
+    },
+    async ({ PublicId, confirm_spend }) => {
+      requireSpendConfirmation(confirm_spend, 1, "get_course_last_revised");
+      const card = await client.request("GET", "/courses/getCourseGroupScorecard", {
+        query: { PublicId }
+      });
+      return toolResult({
+        PublicId: card?.publicId ?? PublicId,
+        name: card?.name ?? null,
+        last_revised: card?.updatedOn ?? null
+      });
+    }
   );
   server.registerTool(
     "get_course_group_scorecard",

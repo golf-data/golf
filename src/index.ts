@@ -34,7 +34,7 @@ const OAUTH_SECURITY_CONFIG = {
 export function createServer(client: GolfIntelligenceClient = api): McpServer {
   const server = new McpServer({
     name: "golf",
-    version: "1.0.2",
+    version: "1.0.7",
   });
 
   server.registerTool(
@@ -74,6 +74,77 @@ export function createServer(client: GolfIntelligenceClient = api): McpServer {
           },
         }),
       ),
+  );
+
+  server.registerTool(
+    "search_courses_near",
+    {
+      title: "Search Golf Courses Near a Point",
+      description:
+        "Free (0 credits). Find Golf Intelligence course groups within a radius (miles) of a latitude/longitude, nearest first. Use the PublicId with the paid detail tools.",
+      inputSchema: {
+        latitude: z.number().min(-90).max(90).describe("Latitude in decimal degrees"),
+        longitude: z.number().min(-180).max(180).describe("Longitude in decimal degrees"),
+        radius_miles: z
+          .number()
+          .positive()
+          .max(100)
+          .describe("Search radius in miles (max 100)"),
+        rows: z
+          .number()
+          .int()
+          .positive()
+          .max(50)
+          .optional()
+          .describe("Maximum number of results (default 20, max 50)"),
+      },
+      annotations: READ_ONLY_LOOKUP_ANNOTATIONS,
+      ...OAUTH_SECURITY_CONFIG,
+    },
+    async ({ latitude, longitude, radius_miles, rows }) => {
+      const limit = rows ?? 20;
+      const response = (await client.request("POST", "/courses/searchCourseGroups", {
+        body: { gpsCoordinate: { latitude, longitude }, rows: 50 },
+      })) as { data?: Array<{ distance?: number | null }> } | null;
+      const within = (response?.data ?? [])
+        .filter((item) => typeof item.distance === "number" && item.distance <= radius_miles)
+        .slice(0, limit);
+      return toolResult({
+        center: { latitude, longitude },
+        radius_miles,
+        distance_unit: "miles",
+        total: within.length,
+        data: within,
+      });
+    },
+  );
+
+  server.registerTool(
+    "get_course_last_revised",
+    {
+      title: "Get Course Last-Revised Date",
+      description:
+        "Paid (1 credit, billed as a scorecard call). Get the date a course group's data was last revised (updatedOn). Search first, then explicitly confirm this charge.",
+      inputSchema: {
+        PublicId: z.string().min(1).describe("Course group PublicId from search"),
+        confirm_spend: z
+          .boolean()
+          .describe("Must be true to authorize spending 1 credit"),
+      },
+      annotations: PAID_READ_ONLY_LOOKUP_ANNOTATIONS,
+      ...OAUTH_SECURITY_CONFIG,
+    },
+    async ({ PublicId, confirm_spend }) => {
+      requireSpendConfirmation(confirm_spend, 1, "get_course_last_revised");
+      const card = (await client.request("GET", "/courses/getCourseGroupScorecard", {
+        query: { PublicId },
+      })) as { publicId?: string; name?: string; updatedOn?: string | null } | null;
+      return toolResult({
+        PublicId: card?.publicId ?? PublicId,
+        name: card?.name ?? null,
+        last_revised: card?.updatedOn ?? null,
+      });
+    },
   );
 
   server.registerTool(

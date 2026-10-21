@@ -8,6 +8,7 @@ import type { Request, Response } from "express";
 import { GolfIntelligenceClient, type Credentials } from "./api.js";
 import { createServer } from "./index.js";
 import { OAuthError, OAuthService } from "./oauth.js";
+import { SAMPLE_PUBLIC_ID, sampleCourseJson, sampleGreenPath } from "./sample.js";
 
 export const CLIENT_ID_HEADER = "x-gi-client-id";
 export const ACTIVE_TOKEN_HEADER = "x-gi-active-token";
@@ -63,6 +64,29 @@ export function createHttpApp(options: HttpAppOptions = {}) {
     dotfiles: "deny", index: "index.html", fallthrough: false,
     setHeaders: res => { res.setHeader("X-Content-Type-Options", "nosniff"); },
   }));
+
+  // Public sample: exactly one course, static snapshot, no GI call, no login.
+  // Every other course ID gets the standard OAuth challenge.
+  const sampleRefused = (_req: Request, res: Response) =>
+    sendMcpUnauthorized(res, oauth, "OAuth authentication is required for this course.");
+  app.get("/sample/course/:publicId", (req: Request, res: Response) => {
+    if (req.params.publicId !== SAMPLE_PUBLIC_ID) return sampleRefused(req, res);
+    res
+      .status(200)
+      .set("Cache-Control", "public, max-age=3600")
+      .set("X-Content-Type-Options", "nosniff")
+      .type("application/json")
+      .send(sampleCourseJson());
+  });
+  app.get("/sample/course/:publicId/greens/:file", (req: Request, res: Response) => {
+    const file = sampleGreenPath(String(req.params.file));
+    if (req.params.publicId !== SAMPLE_PUBLIC_ID || !file) return sampleRefused(req, res);
+    res
+      .set("Cache-Control", "public, max-age=86400")
+      .set("X-Content-Type-Options", "nosniff")
+      .sendFile(file);
+  });
+  app.all(/^\/sample(\/.*)?$/, sampleRefused);
 
   app.get("/health", (_req: Request, res: Response) => {
     res.status(200).json({ status: "ok" });
@@ -373,14 +397,14 @@ function authorizationPage(requestToken: string): string {
 <body>
   <main>
     <h1>Connect Golf Intelligence</h1>
-    <p>Sign in with the Client ID and Active Token from your Golf Intelligence API Account. Calls made through ChatGPT use that account and its credits.</p>
+    <p>Sign in with the Client ID and Active Token from your Golf Intelligence API Account. Calls made through your AI assistant use that account and its credits.</p>
     <form method="post" action="/oauth/authorize">
       <input type="hidden" name="authorization_request" value="${escapeHtml(requestToken)}">
       <label for="gi_client_id">Client ID</label>
       <input id="gi_client_id" name="gi_client_id" required autocomplete="username">
       <label for="gi_active_token">Active Token</label>
       <input id="gi_active_token" name="gi_active_token" type="password" required autocomplete="current-password">
-      <button type="submit">Authorize ChatGPT</button>
+      <button type="submit">Authorize</button>
     </form>
     <p class="note">Your credentials are validated with Golf Intelligence and bound to encrypted OAuth tokens. They are not logged.</p>
   </main>

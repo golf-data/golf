@@ -176,8 +176,10 @@ test("committed bundle starts and exposes all Golf Intelligence tools", async ()
         "get_course_group_detail",
         "get_course_group_gps",
         "get_course_group_scorecard",
+        "get_course_last_revised",
         "get_green_slope_image",
         "search_course_groups",
+        "search_courses_near",
       ],
     );
     const refused = await client.callTool({

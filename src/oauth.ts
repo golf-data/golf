@@ -226,7 +226,7 @@ export class OAuthService {
     ) {
       throw new OAuthError(
         "invalid_redirect_uri",
-        "Dynamic registration is limited to ChatGPT callback URLs.",
+        "Dynamic registration is limited to documented MCP client callback URLs.",
       );
     }
     if (
@@ -540,7 +540,7 @@ export class OAuthService {
     const client = this.open<DynamicClient>("dynamic_client", clientId);
     if (
       client.kind !== "dynamic_client" ||
-      !client.redirectUris.includes(redirectUri)
+      !redirectMatches(client.redirectUris, redirectUri)
     ) {
       throw new OAuthError("invalid_request", "redirect_uri is not registered.");
     }
@@ -706,16 +706,87 @@ function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value);
 }
 
-function isAllowedDynamicRedirectUri(value: string): boolean {
+// Documented OAuth callback URLs for MCP clients that use dynamic registration.
+// Sources are listed in docs/OAUTH-CLIENT-CALLBACKS.md. Exact matches only,
+// except the documented path prefixes below.
+const DYNAMIC_REDIRECT_EXACT = new Set([
+  // OpenAI ChatGPT
+  "https://chatgpt.com/connector_platform_oauth_redirect",
+  // Anthropic Claude (claude.ai and claude.com)
+  "https://claude.ai/api/mcp/auth_callback",
+  "https://claude.com/api/mcp/auth_callback",
+  // Perplexity
+  "https://www.perplexity.ai/rest/connections/oauth_callback",
+  // Mistral Studio connectors (Le Chat / AI Studio)
+  "https://console.mistral.ai/build/connectors/debugger/oauth-callback",
+  // GitHub Copilot in VS Code
+  "https://vscode.dev/redirect",
+  "https://insiders.vscode.dev/redirect",
+]);
+
+const DYNAMIC_REDIRECT_PREFIXES: Array<{ host: string; prefix: string }> = [
+  // OpenAI ChatGPT per-connector callbacks
+  { host: "chatgpt.com", prefix: "/connector/oauth/" },
+  // Microsoft Copilot Studio / Power Platform custom connectors
+  { host: "global.consent.azure-apim.net", prefix: "/redirect/" },
+];
+
+// Native clients (Claude Code, Gemini CLI, Copilot in VS Code / Copilot CLI)
+// receive the code on a loopback listener. RFC 8252 section 7.3: any port.
+const LOOPBACK_HOSTS = new Set(["127.0.0.1", "localhost", "[::1]"]);
+const LOOPBACK_PATHS = new Set(["/", "/callback", "/oauth/callback"]);
+
+export function isLoopbackRedirectUri(value: string): boolean {
   try {
     const url = new URL(value);
-    return url.protocol === "https:" && url.hostname === "chatgpt.com" && (
-      url.pathname.startsWith("/connector/oauth/") ||
-      url.pathname === "/connector_platform_oauth_redirect"
+    return (
+      url.protocol === "http:" &&
+      LOOPBACK_HOSTS.has(url.hostname) &&
+      LOOPBACK_PATHS.has(url.pathname) &&
+      !url.username &&
+      !url.password &&
+      !url.hash
     );
   } catch {
     return false;
   }
+}
+
+function loopbackKey(value: string): string {
+  const url = new URL(value);
+  return `${url.hostname}${url.pathname}${url.search}`;
+}
+
+export function isAllowedDynamicRedirectUri(value: string): boolean {
+  try {
+    if (isLoopbackRedirectUri(value)) return true;
+    const url = new URL(value);
+    if (url.protocol !== "https:" || url.username || url.password || url.hash) {
+      return false;
+    }
+    if (url.port) return false;
+    if (DYNAMIC_REDIRECT_EXACT.has(`${url.origin}${url.pathname}`)) {
+      return true;
+    }
+    return DYNAMIC_REDIRECT_PREFIXES.some(
+      ({ host, prefix }) =>
+        url.hostname === host &&
+        url.pathname.startsWith(prefix) &&
+        url.pathname.length > prefix.length &&
+        !url.pathname.includes(".."),
+    );
+  } catch {
+    return false;
+  }
+}
+
+function redirectMatches(registered: string[], requested: string): boolean {
+  if (registered.includes(requested)) return true;
+  if (!isLoopbackRedirectUri(requested)) return false;
+  const key = loopbackKey(requested);
+  return registered.some(
+    (uri) => isLoopbackRedirectUri(uri) && loopbackKey(uri) === key,
+  );
 }
 
 function isAllowedStaticRedirectUri(value: string): boolean {

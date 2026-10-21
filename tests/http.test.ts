@@ -89,13 +89,13 @@ test("Streamable HTTP exposes health, tools, annotations, and header auth", asyn
   try {
     await client.connect(transport);
     const { tools } = await client.listTools();
-    assert.equal(tools.length, 5);
+    assert.equal(tools.length, 7);
     for (const tool of tools) {
       assert.deepEqual(tool.annotations, {
         readOnlyHint: true,
         openWorldHint: false,
         destructiveHint: false,
-        idempotentHint: tool.name === "search_course_groups",
+        idempotentHint: ["search_course_groups", "search_courses_near"].includes(tool.name),
       });
       assert.deepEqual(
         (tool as { _meta?: { securitySchemes?: unknown } })._meta
@@ -253,6 +253,46 @@ test("OAuth discovery, PKCE, refresh, and account-bound tool calls work", async 
       body: JSON.stringify({ redirect_uris: ["https://evil.example/callback"] }),
     });
     assert.equal(rejectedRegistration.status, 400);
+    for (const uri of [
+      "https://claude.ai/api/mcp/auth_callback",
+      "https://claude.com/api/mcp/auth_callback",
+      "https://www.perplexity.ai/rest/connections/oauth_callback",
+      "https://console.mistral.ai/build/connectors/debugger/oauth-callback",
+      "https://vscode.dev/redirect",
+      "https://global.consent.azure-apim.net/redirect/shared-golf-abc123",
+      "http://127.0.0.1:33418/",
+      "http://localhost:7777/oauth/callback",
+      "https://chatgpt.com/connector_platform_oauth_redirect",
+    ]) {
+      const ok = await fetch(`${baseUrl}/oauth/register`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ redirect_uris: [uri] }),
+      });
+      assert.equal(ok.status, 201, uri);
+    }
+    for (const uri of [
+      "https://claude.ai.evil.example/api/mcp/auth_callback",
+      "https://claude.ai/api/mcp/other",
+      "http://claude.ai/api/mcp/auth_callback",
+      "http://127.0.0.1:33418/steal",
+      "http://10.0.0.5/callback",
+      "https://global.consent.azure-apim.net/redirect/",
+    ]) {
+      const bad = await fetch(`${baseUrl}/oauth/register`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ redirect_uris: [uri] }),
+      });
+      assert.equal(bad.status, 400, uri);
+    }
+    const sample = await fetch(`${baseUrl}/sample/course/225V2ANM`);
+    assert.equal(sample.status, 200);
+    assert.equal(((await sample.json()) as { publicId: string }).publicId, "225V2ANM");
+    for (const path of ["/sample/course/22V94F3U", "/sample", "/sample/course", "/sample/course/225V2ANM/greens/hole-19.png"]) {
+      const refused = await fetch(`${baseUrl}${path}`);
+      assert.equal(refused.status, 401, path);
+    }
     const acceptedRegistration = await fetch(`${baseUrl}/oauth/register`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -374,7 +414,7 @@ test("OAuth discovery, PKCE, refresh, and account-bound tool calls work", async 
     try {
       await client.connect(transport);
       const tools = await client.listTools();
-      assert.equal(tools.tools.length, 5);
+      assert.equal(tools.tools.length, 7);
       await client.callTool({
         name: "search_course_groups",
         arguments: { keywords: "St Andrews" },
