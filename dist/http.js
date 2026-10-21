@@ -5345,10 +5345,10 @@ var require_raw_body = __commonJS({
       if (done) {
         return readStream(stream, encoding, length, limit, wrap(done));
       }
-      return new Promise(function executor(resolve, reject) {
+      return new Promise(function executor(resolve2, reject) {
         readStream(stream, encoding, length, limit, function onRead(err, buf) {
           if (err) return reject(err);
-          resolve(buf);
+          resolve2(buf);
         });
       });
     }
@@ -18934,7 +18934,7 @@ var require_view = __commonJS({
     var basename = path.basename;
     var extname = path.extname;
     var join = path.join;
-    var resolve = path.resolve;
+    var resolve2 = path.resolve;
     module.exports = View;
     function View(name, options) {
       var opts = options || {};
@@ -18968,7 +18968,7 @@ var require_view = __commonJS({
       debug('lookup "%s"', name);
       for (var i = 0; i < roots.length && !path2; i++) {
         var root = roots[i];
-        var loc = resolve(root, name);
+        var loc = resolve2(root, name);
         var dir = dirname2(loc);
         var file2 = basename(loc);
         path2 = this.resolve(dir, file2);
@@ -18993,7 +18993,7 @@ var require_view = __commonJS({
       });
       sync = false;
     };
-    View.prototype.resolve = function resolve2(dir, file2) {
+    View.prototype.resolve = function resolve3(dir, file2) {
       var ext = this.ext;
       var path2 = join(dir, file2);
       var stat = tryStat(path2);
@@ -21252,7 +21252,7 @@ var require_application = __commonJS({
     var compileETag = require_utils3().compileETag;
     var compileQueryParser = require_utils3().compileQueryParser;
     var compileTrust = require_utils3().compileTrust;
-    var resolve = __require("node:path").resolve;
+    var resolve2 = __require("node:path").resolve;
     var once = require_once();
     var Router = require_router();
     var slice = Array.prototype.slice;
@@ -21306,7 +21306,7 @@ var require_application = __commonJS({
       this.mountpath = "/";
       this.locals.settings = this.settings;
       this.set("view", View);
-      this.set("views", resolve("views"));
+      this.set("views", resolve2("views"));
       this.set("jsonp callback name", "callback");
       if (env === "production") {
         this.enable("view cache");
@@ -22886,7 +22886,7 @@ var require_send = __commonJS({
     var extname = path.extname;
     var join = path.join;
     var normalize = path.normalize;
-    var resolve = path.resolve;
+    var resolve2 = path.resolve;
     var sep = path.sep;
     var BYTES_RANGE_REGEXP = /^ *bytes=/;
     var MAX_MAXAGE = 60 * 60 * 24 * 365 * 1e3;
@@ -22915,7 +22915,7 @@ var require_send = __commonJS({
       this._maxage = opts.maxAge || opts.maxage;
       this._maxage = typeof this._maxage === "string" ? ms(this._maxage) : Number(this._maxage);
       this._maxage = !isNaN(this._maxage) ? Math.min(Math.max(0, this._maxage), MAX_MAXAGE) : 0;
-      this._root = opts.root ? resolve(opts.root) : null;
+      this._root = opts.root ? resolve2(opts.root) : null;
     }
     util2.inherits(SendStream, Stream);
     SendStream.prototype.error = function error51(status, err) {
@@ -23064,7 +23064,7 @@ var require_send = __commonJS({
           return res;
         }
         parts = normalize(path2).split(sep);
-        path2 = resolve(path2);
+        path2 = resolve2(path2);
       }
       if (containsDotFile(parts)) {
         debug('%s dotfile "%s"', this._dotfiles, path2);
@@ -23442,7 +23442,7 @@ var require_response = __commonJS({
     var cookie = require_cookie();
     var send = require_send();
     var extname = path.extname;
-    var resolve = path.resolve;
+    var resolve2 = path.resolve;
     var vary = require_vary();
     var { Buffer: Buffer2 } = __require("node:buffer");
     var res = Object.create(http.ServerResponse.prototype);
@@ -23648,7 +23648,7 @@ var require_response = __commonJS({
       }
       opts = Object.create(opts);
       opts.headers = headers;
-      var fullPath = !opts.root ? resolve(path2) : path2;
+      var fullPath = !opts.root ? resolve2(path2) : path2;
       return this.sendFile(fullPath, opts, done);
     };
     res.contentType = res.type = function contentType3(type) {
@@ -23897,7 +23897,7 @@ var require_serve_static = __commonJS({
     var encodeUrl = require_encodeurl();
     var escapeHtml2 = require_escape_html();
     var parseUrl = require_parseurl();
-    var resolve = __require("path").resolve;
+    var resolve2 = __require("path").resolve;
     var send = require_send();
     var url2 = __require("url");
     module.exports = serveStatic;
@@ -23916,7 +23916,7 @@ var require_serve_static = __commonJS({
         throw new TypeError("option setHeaders must be function");
       }
       opts.maxage = opts.maxage || opts.maxAge || 0;
-      opts.root = resolve(root);
+      opts.root = resolve2(root);
       var onDirectory = redirect2 ? createRedirectDirectoryListener() : createNotFoundDirectoryListener();
       return function serveStatic2(req, res, next) {
         if (req.method !== "GET" && req.method !== "HEAD") {
@@ -26993,7 +26993,7 @@ var require_compile = __commonJS({
       const schOrFunc = root.refs[ref];
       if (schOrFunc)
         return schOrFunc;
-      let _sch = resolve.call(this, root, ref);
+      let _sch = resolve2.call(this, root, ref);
       if (_sch === void 0) {
         const schema = (_a3 = root.localRefs) === null || _a3 === void 0 ? void 0 : _a3[ref];
         const { schemaId } = this.opts;
@@ -27020,7 +27020,7 @@ var require_compile = __commonJS({
     function sameSchemaEnv(s1, s2) {
       return s1.schema === s2.schema && s1.root === s2.root && s1.baseId === s2.baseId;
     }
-    function resolve(root, ref) {
+    function resolve2(root, ref) {
       let sch;
       while (typeof (sch = this.refs[ref]) == "string")
         ref = sch;
@@ -27845,7 +27845,7 @@ var require_fast_uri = __commonJS({
       }
       return uri;
     }
-    function resolve(baseURI, relativeURI, options) {
+    function resolve2(baseURI, relativeURI, options) {
       const schemelessOptions = options ? Object.assign({ scheme: "null" }, options) : { scheme: "null" };
       const {
         parsed: baseParsed,
@@ -28207,7 +28207,7 @@ var require_fast_uri = __commonJS({
     var fastUri = {
       SCHEMES,
       normalize,
-      resolve,
+      resolve: resolve2,
       resolveComponent,
       equal,
       serialize,
@@ -31198,6 +31198,7 @@ var require_dist5 = __commonJS({
 
 // src/http.ts
 import { pathToFileURL as pathToFileURL2 } from "node:url";
+import { resolve } from "node:path";
 
 // node_modules/@modelcontextprotocol/sdk/dist/esm/server/express.js
 var import_express = __toESM(require_express2(), 1);
@@ -31689,7 +31690,7 @@ var readBodyDirect = (request) => {
     request[bodyBufferKey] = buffered;
     return Promise.resolve(buffered);
   }
-  const promise2 = new Promise((resolve, reject) => {
+  const promise2 = new Promise((resolve2, reject) => {
     const chunks = [];
     let settled = false;
     const finish = (callback) => {
@@ -31707,7 +31708,7 @@ var readBodyDirect = (request) => {
         else if (recovered === void 0) reject(error51 ?? normalizeAbortError(request, incoming));
         else {
           request[bodyBufferKey] = recovered;
-          resolve(recovered);
+          resolve2(recovered);
         }
       });
       return true;
@@ -31719,7 +31720,7 @@ var readBodyDirect = (request) => {
       finish(() => {
         const buffer = chunks.length === 1 ? chunks[0] : Buffer.concat(chunks);
         request[bodyBufferKey] = buffer;
-        resolve(buffer);
+        resolve2(buffer);
       });
     };
     const onError = (error51) => {
@@ -32244,7 +32245,7 @@ var responseViaResponseObject = async (res, outgoing, options = {}) => {
         });
         if (!chunk) {
           if (i === 1) {
-            await new Promise((resolve) => setTimeout(resolve));
+            await new Promise((resolve2) => setTimeout(resolve2));
             maxReadCount = 3;
             continue;
           }
@@ -48971,9 +48972,9 @@ data:
       const initRequest = messages.find((m) => isInitializeRequest(m));
       const clientProtocolVersion = initRequest ? initRequest.params.protocolVersion : req.headers.get("mcp-protocol-version") ?? DEFAULT_NEGOTIATED_PROTOCOL_VERSION;
       if (this._enableJsonResponse) {
-        return new Promise((resolve) => {
+        return new Promise((resolve2) => {
           this._streamMapping.set(streamId, {
-            resolveJson: resolve,
+            resolveJson: resolve2,
             cleanup: () => {
               this._streamMapping.delete(streamId);
             }
@@ -55374,7 +55375,7 @@ var Protocol = class {
           return;
         }
         const pollInterval = task2.pollInterval ?? this._options?.defaultTaskPollInterval ?? 1e3;
-        await new Promise((resolve) => setTimeout(resolve, pollInterval));
+        await new Promise((resolve2) => setTimeout(resolve2, pollInterval));
         options?.signal?.throwIfAborted();
       }
     } catch (error51) {
@@ -55391,7 +55392,7 @@ var Protocol = class {
    */
   request(request, resultSchema, options) {
     const { relatedRequestId, resumptionToken, onresumptiontoken, task, relatedTask } = options ?? {};
-    return new Promise((resolve, reject) => {
+    return new Promise((resolve2, reject) => {
       const earlyReject = (error51) => {
         reject(error51);
       };
@@ -55469,7 +55470,7 @@ var Protocol = class {
           if (!parseResult.success) {
             reject(parseResult.error);
           } else {
-            resolve(parseResult.data);
+            resolve2(parseResult.data);
           }
         } catch (error51) {
           reject(error51);
@@ -55730,12 +55731,12 @@ var Protocol = class {
       }
     } catch {
     }
-    return new Promise((resolve, reject) => {
+    return new Promise((resolve2, reject) => {
       if (signal.aborted) {
         reject(new McpError(ErrorCode.InvalidRequest, "Request cancelled"));
         return;
       }
-      const timeoutId = setTimeout(resolve, interval);
+      const timeoutId = setTimeout(resolve2, interval);
       signal.addEventListener("abort", () => {
         clearTimeout(timeoutId);
         reject(new McpError(ErrorCode.InvalidRequest, "Request cancelled"));
@@ -56826,7 +56827,7 @@ var McpServer = class {
     let task = createTaskResult.task;
     const pollInterval = task.pollInterval ?? 5e3;
     while (task.status !== "completed" && task.status !== "failed" && task.status !== "cancelled") {
-      await new Promise((resolve) => setTimeout(resolve, pollInterval));
+      await new Promise((resolve2) => setTimeout(resolve2, pollInterval));
       const updatedTask = await extra.taskStore.getTask(taskId);
       if (!updatedTask) {
         throw new McpError(ErrorCode.InternalError, `Task ${taskId} not found during polling`);
@@ -57490,12 +57491,12 @@ var StdioServerTransport = class {
     this.onclose?.();
   }
   send(message) {
-    return new Promise((resolve) => {
+    return new Promise((resolve2) => {
       const json3 = serializeMessage(message);
       if (this._stdout.write(json3)) {
-        resolve();
+        resolve2();
       } else {
-        this._stdout.once("drain", resolve);
+        this._stdout.once("drain", resolve2);
       }
     });
   }
@@ -57511,6 +57512,65 @@ function requireSpendConfirmation(confirmSpend, credits, toolName) {
       `${toolName} costs ${credits} credit${credits === 1 ? "" : "s"}. Set confirm_spend=true to confirm this paid API call.`
     );
   }
+}
+
+// src/presentation.ts
+import { gunzipSync } from "node:zlib";
+function record2(value) {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+function pick2(value, keys) {
+  return Object.fromEntries(keys.filter((k) => value[k] !== void 0).map((k) => [k, value[k]]));
+}
+function coursePresentation(value) {
+  if (!record2(value) || typeof value.publicId !== "string") return value;
+  const summary = pick2(value, ["publicId", "name", "updatedOn", "courseGroupId", "facility", "courseArchitect", "yearOpened", "guestPolicyTypeId", "courseEnvironmentTypeId", "isElevationData", "tileSets", "courseGroupDataStats", "isActive"]);
+  if (Array.isArray(value.holes)) {
+    const columns = ["holeId", "holeNumber", "holeName", "holeType", "teeGPSCoordinate", "approachGPSCoordinate", "greenGPSCoordinate"];
+    summary.holes = value.holes.filter(record2).map((h) => pick2(h, columns));
+  }
+  if (Array.isArray(value.courses)) {
+    summary.courses = value.courses.filter(record2).map((course) => ({
+      ...pick2(course, ["courseId", "name", "courseHoleType", "courseStatusType"]),
+      tees: Array.isArray(course.tees) ? course.tees.filter(record2).map((tee) => ({
+        ...pick2(tee, ["teeId", "teeName", "courseTeeType", "teeType", "isTeeActive", "par", "yardage", "slope", "rating"]),
+        holes: Array.isArray(tee.holes) ? tee.holes.filter(record2).map((h) => pick2(h, ["holeId", "holeNumber", "par", "yardage", "allocation"])) : []
+      })) : []
+    }));
+  }
+  if (Array.isArray(value.layouts)) {
+    summary.layouts = value.layouts.filter(record2).map((layout) => ({
+      ...pick2(layout, ["layoutId", "layoutName", "layoutType"]),
+      holeIds: Array.isArray(layout.holes) ? layout.holes.filter(record2).map((h) => h.holeId) : []
+    }));
+  }
+  let geometry = value.gpsItems;
+  if (typeof value.data === "string" && value.data) {
+    try {
+      geometry = JSON.parse(gunzipSync(Buffer.from(value.data, "base64"), { maxOutputLength: 16 * 1024 * 1024 }).toString("utf8"));
+    } catch {
+      summary.geometryNote = "Compressed geometry could not be summarized; original payload is retained in result metadata.";
+    }
+  }
+  if (Array.isArray(geometry)) {
+    const counts = {};
+    const holeIds = /* @__PURE__ */ new Set();
+    for (const item of geometry.filter(record2)) {
+      const type = String(item.gpsType ?? "Unknown");
+      counts[type] = (counts[type] ?? 0) + 1;
+      if (item.holeId !== void 0) holeIds.add(item.holeId);
+    }
+    summary.geometry = { recordCount: geometry.length, holeCount: holeIds.size, countsByType: counts, note: "Geometry summary only. Full shapes remain in the original payload in result metadata; do not infer shape coordinates from counts." };
+  }
+  summary.presentationNote = "Compact course data for model context. All returned tee score rows are included; allocation is the source handicap field. Original API payload, including detailed geometry and auxiliary fields, is retained in _meta.golfRawResult for clients.";
+  return summary;
+}
+function toolResult(value) {
+  const presented = coursePresentation(value);
+  return {
+    content: [{ type: "text", text: typeof presented === "string" ? presented : JSON.stringify(presented) }],
+    ...presented === value ? {} : { _meta: { golfRawResult: value } }
+  };
 }
 
 // src/index.ts
@@ -57535,16 +57595,6 @@ var OAUTH_SECURITY_CONFIG = {
   // Backward-compatible mirror used by existing OpenAI Apps clients.
   _meta: { securitySchemes: OAUTH_SECURITY }
 };
-function toolResult(value) {
-  return {
-    content: [
-      {
-        type: "text",
-        text: typeof value === "string" ? value : JSON.stringify(value, null, 2)
-      }
-    ]
-  };
-}
 function createServer(client = api) {
   const server = new McpServer({
     name: "golf",
@@ -58283,6 +58333,14 @@ function createHttpApp(options = {}) {
   const oauth = options.oauthService ?? new OAuthService(env);
   const app = createMcpExpressApp({ host: "0.0.0.0" });
   app.use(import_express3.default.urlencoded({ extended: false, limit: "32kb" }));
+  app.use("/demo", import_express3.default.static(resolve("public/demo"), {
+    dotfiles: "deny",
+    index: "index.html",
+    fallthrough: false,
+    setHeaders: (res) => {
+      res.setHeader("X-Content-Type-Options", "nosniff");
+    }
+  }));
   app.get("/health", (_req, res) => {
     res.status(200).json({ status: "ok" });
   });
@@ -58305,12 +58363,14 @@ function createHttpApp(options = {}) {
   });
   app.get("/oauth/authorize", (req, res) => {
     try {
-      const { requestToken } = oauth.createAuthorizationRequest(
+      const { requestToken, request } = oauth.createAuthorizationRequest(
         req.query
       );
+      const callbackOrigin = new URL(request.redirectUri).origin;
+      const formDestinations = callbackOrigin === "https://chatgpt.com" ? `${callbackOrigin} https://platform.openai.com` : callbackOrigin;
       res.status(200).set("Cache-Control", "no-store").set("Pragma", "no-cache").set(
         "Content-Security-Policy",
-        "default-src 'none'; style-src 'unsafe-inline'; form-action 'self'; frame-ancestors 'none'; base-uri 'none'"
+        `default-src 'none'; style-src 'unsafe-inline'; form-action 'self' ${formDestinations}; frame-ancestors 'none'; base-uri 'none'`
       ).type("html").send(authorizationPage(requestToken));
     } catch (error51) {
       sendAuthorizationError(res, error51);
@@ -58545,8 +58605,8 @@ function configuredPort() {
 }
 async function startHttpServer(port = configuredPort(), host = "0.0.0.0") {
   const app = createHttpApp();
-  return new Promise((resolve, reject) => {
-    const httpServer = app.listen(port, host, () => resolve(httpServer));
+  return new Promise((resolve2, reject) => {
+    const httpServer = app.listen(port, host, () => resolve2(httpServer));
     httpServer.once("error", reject);
   });
 }
