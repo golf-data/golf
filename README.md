@@ -1,8 +1,7 @@
 # Golf Course Data by Stracka
 
-> Golf Course Data by Stracka. Proprietary StrackaGolf course data for
-> developers building a golf app, updated daily. Search is free. Scorecards,
-> GPS, and 3D greens are available via API.
+> Golf Course Data by Stracka. Proprietary StrackaGolf course data only,
+> updated daily. Search is free. Scorecards, GPS, and 3D greens via API.
 
 Golf Intelligence provides proprietary StrackaGolf course data, updated daily.
 Learn more at [golfintelligence.com](https://golfintelligence.com/).
