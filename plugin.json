@@ -2,9 +2,9 @@
   "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
   "name": "golf",
   "version": "1.0.7",
-  "description": "Golf Intelligence, by Stracka. Proprietary StrackaGolf course data only, updated daily. Search is free. Scorecards, GPS, and 3D greens via API.",
+  "description": "Golf Course Data by Stracka. Proprietary StrackaGolf course data only, updated daily. Search is free. Scorecards, GPS, and 3D greens via API.",
   "author": {
-    "name": "Golf Intelligence, by Stracka",
+    "name": "Golf Course Data by Stracka",
     "email": "support@golfintelligence.com",
     "url": "https://golfintelligence.com/"
   },

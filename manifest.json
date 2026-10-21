@@ -1,12 +1,12 @@
 {
   "manifest_version": "0.3",
   "name": "golf",
-  "display_name": "Golf Intelligence, by Stracka",
+  "display_name": "Golf Course Data by Stracka",
   "version": "1.0.7",
   "description": "Proprietary StrackaGolf course data, updated daily. Search is free.",
-  "long_description": "Golf Intelligence, by Stracka. Proprietary StrackaGolf course data, updated daily. Search is free. Scorecards, GPS, and 3D greens are available via API.",
+  "long_description": "Golf Course Data by Stracka. Proprietary StrackaGolf course data only, updated daily. Search is free. Scorecards, GPS, and 3D greens via API.",
   "author": {
-    "name": "Golf Intelligence, by Stracka",
+    "name": "Golf Course Data by Stracka",
     "email": "support@golfintelligence.com",
     "url": "https://golfintelligence.com/"
   },
