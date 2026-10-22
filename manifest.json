@@ -2,7 +2,7 @@
   "manifest_version": "0.3",
   "name": "golf",
   "display_name": "Golf Course Data by Stracka",
-  "version": "1.0.7",
+  "version": "1.0.8",
   "description": "Proprietary StrackaGolf course data, updated daily. Search is free.",
   "long_description": "Golf Course Data by Stracka. Proprietary StrackaGolf course data only, updated daily. Search is free. Scorecards, GPS, and 3D greens via API.",
   "author": {

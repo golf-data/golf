@@ -1,7 +1,7 @@
 {
   "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
   "name": "golf",
-  "version": "1.0.7",
+  "version": "1.0.8",
   "description": "Golf Course Data by Stracka. Proprietary StrackaGolf course data only, updated daily. Search is free. Scorecards, GPS, and 3D greens via API.",
   "author": {
     "name": "Golf Course Data by Stracka",
